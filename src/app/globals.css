@@ -1,47 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  /* Cutelaria do ISAÍAS - tema claro */
-  --background: #f8fafc;
-  --foreground: #1a1a1a;
-  --surface: #ffffff;
-  --surface-hover: #fff7ed;
-  --border: #fed7aa;
+  /* Cutelaria do ISAÍAS - tema escuro (padrão) */
+  --background: #1a1a1a;
+  --foreground: #f8fafc;
+  --surface: #262626;
+  --surface-hover: #333333;
+  --border: #404040;
   --primary: #ff9900;
-  --primary-hover: #e68a00;
-  --primary-foreground: #ffffff;
-  --secondary: #78716c;
-  --secondary-foreground: #1a1a1a;
-  --muted: #a8a29e;
+  --primary-hover: #ffb347;
+  --primary-foreground: #1a1a1a;
+  --secondary: #a8a29e;
+  --secondary-foreground: #f8fafc;
+  --muted: #78716c;
   --accent: #ff9900;
-  --accent-hover: #e68a00;
-  --destructive: #ef4444;
-  --destructive-hover: #dc2626;
-  --success: #22c55e;
+  --accent-hover: #ffb347;
+  --destructive: #f87171;
+  --destructive-hover: #fca5a5;
+  --success: #4ade80;
   --radius: 12px;
   --radius-lg: 16px;
   --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    /* Cutelaria do ISAÍAS - tema escuro (cores do logo) */
-    --background: #1a1a1a;
-    --foreground: #f8fafc;
-    --surface: #262626;
-    --surface-hover: #333333;
-    --border: #404040;
+    /* Cutelaria do ISAÍAS - tema claro */
+    --background: #f8fafc;
+    --foreground: #1a1a1a;
+    --surface: #ffffff;
+    --surface-hover: #fff7ed;
+    --border: #fed7aa;
     --primary: #ff9900;
-    --primary-hover: #ffb347;
-    --primary-foreground: #1a1a1a;
-    --secondary: #a8a29e;
-    --secondary-foreground: #f8fafc;
-    --muted: #78716c;
+    --primary-hover: #e68a00;
+    --primary-foreground: #ffffff;
+    --secondary: #78716c;
+    --secondary-foreground: #1a1a1a;
+    --muted: #a8a29e;
     --accent: #ff9900;
-    --accent-hover: #ffb347;
-    --destructive: #f87171;
-    --destructive-hover: #fca5a5;
-    --success: #4ade80;
+    --accent-hover: #e68a00;
+    --destructive: #ef4444;
+    --destructive-hover: #dc2626;
+    --success: #22c55e;
   }
 }
 
