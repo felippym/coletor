@@ -37,7 +37,7 @@ export function ThemeSwitch() {
       type="button"
       onClick={toggle}
       aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-      className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+      className="fixed right-4 top-[calc(1rem+env(safe-area-inset-top))] z-40 flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
     >
       {theme === "dark" ? (
         <svg

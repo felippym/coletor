@@ -104,14 +104,14 @@ export default function InventoryScanPage() {
 
   if (!inventory) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <p className="text-[var(--secondary)]">Carregando...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--background)]">
+    <div className="flex min-h-dvh flex-col bg-[var(--background)]">
       <HiddenBarcodeInput onScan={processBarcode} />
 
       <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
@@ -226,7 +226,7 @@ export default function InventoryScanPage() {
 
           <button
             onClick={handleEndInventory}
-            className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98]"
+            className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)]"
           >
             Encerrar Inventário
           </button>

@@ -39,7 +39,7 @@ export default function InventoriesPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--background)]">
+    <div className="flex min-h-dvh flex-col bg-[var(--background)]">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4">
           <Link

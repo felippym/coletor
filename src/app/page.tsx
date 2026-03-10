@@ -8,7 +8,7 @@ export default function Home() {
   const [showDrawer, setShowDrawer] = useState(false);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[var(--background)] px-4 py-8">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center bg-[var(--background)] px-4 py-8">
       <main className="flex w-full max-w-md flex-col items-center gap-12">
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="rounded-2xl bg-[var(--surface)] p-4 shadow-sm">
@@ -41,7 +41,7 @@ export default function Home() {
           </Link>
         </div>
       </main>
-      <footer className="absolute bottom-0 left-0 right-0 py-6 text-center text-sm text-[var(--secondary)]">
+      <footer className="absolute bottom-0 left-0 right-0 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center text-sm text-[var(--secondary)]">
         desenvolvido por Felippy
       </footer>
       <StartInventoryDrawer isOpen={showDrawer} onClose={() => setShowDrawer(false)} />

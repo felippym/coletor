@@ -88,7 +88,7 @@ export default function InventoryDetailsPage() {
 
   if (!inventory) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <p className="text-[var(--secondary)]">Carregando...</p>
       </div>
     );
@@ -97,7 +97,7 @@ export default function InventoryDetailsPage() {
   const totalQty = inventory.items.reduce((s, i) => s + i.quantity, 0);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--background)]">
+    <div className="flex min-h-dvh flex-col bg-[var(--background)]">
       <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-4 py-4">
           <div className="flex items-center gap-4">
