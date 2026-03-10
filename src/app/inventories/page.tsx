@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getInventories, deleteInventory } from "@/lib/storage";
+import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import type { Inventory } from "@/types/inventory";
 
 function formatDate(iso: string) {
@@ -18,17 +19,23 @@ function formatDate(iso: string) {
 
 export default function InventoriesPage() {
   const [inventories, setInventories] = useState<Inventory[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
 
   useEffect(() => {
     getInventories().then(setInventories);
   }, []);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, inv: Inventory) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm("Excluir este inventário?")) return;
-    await deleteInventory(id);
-    setInventories((prev) => prev.filter((i) => i.id !== id));
+    setDeleteTarget(inv);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteInventory(deleteTarget.id);
+    setInventories((prev) => prev.filter((i) => i.id !== deleteTarget.id));
+    setDeleteTarget(null);
   };
 
   return (
@@ -94,7 +101,7 @@ export default function InventoriesPage() {
                       </div>
                     </Link>
                     <button
-                      onClick={(e) => handleDelete(e, inv.id)}
+                      onClick={(e) => handleDeleteClick(e, inv)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
                       aria-label="Excluir inventário"
                     >
@@ -108,6 +115,13 @@ export default function InventoriesPage() {
           )}
         </div>
       </main>
+      <ConfirmDeleteDrawer
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir inventário?"
+        message={deleteTarget ? `"${deleteTarget.name}" será excluído permanentemente. Esta ação não pode ser desfeita.` : undefined}
+      />
     </div>
   );
 }
