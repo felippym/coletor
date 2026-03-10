@@ -1,5 +1,5 @@
 import type { Inventory } from "@/types/inventory";
-import { supabase, isSupabaseConfigured } from "./supabase";
+import { getSupabase, isSupabaseConfigured } from "./supabase";
 
 const STORAGE_KEY = "inventories";
 
@@ -27,6 +27,7 @@ function saveToLocalStorage(inventory: Inventory): void {
 
 // --- Supabase ---
 export async function getInventories(): Promise<Inventory[]> {
+  const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
       const { data, error } = await supabase
@@ -41,14 +42,16 @@ export async function getInventories(): Promise<Inventory[]> {
           items: row.items ?? [],
         }));
       }
-    } catch {
-      // Fallback to localStorage
+      if (error) console.error("[Supabase] getInventories:", error.message);
+    } catch (err) {
+      console.error("[Supabase] getInventories error:", err);
     }
   }
   return getFromLocalStorage();
 }
 
 export async function saveInventory(inventory: Inventory): Promise<void> {
+  const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
       const { error } = await supabase.from("inventories").upsert(
@@ -61,14 +64,16 @@ export async function saveInventory(inventory: Inventory): Promise<void> {
         { onConflict: "id" }
       );
       if (!error) return;
-    } catch {
-      // Fallback to localStorage
+      if (error) console.error("[Supabase] saveInventory:", error.message);
+    } catch (err) {
+      console.error("[Supabase] saveInventory error:", err);
     }
   }
   saveToLocalStorage(inventory);
 }
 
 export async function getInventory(id: string): Promise<Inventory | null> {
+  const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
       const { data, error } = await supabase
@@ -84,20 +89,23 @@ export async function getInventory(id: string): Promise<Inventory | null> {
           items: data.items ?? [],
         };
       }
-    } catch {
-      // Fallback to localStorage
+      if (error && error.code !== "PGRST116") console.error("[Supabase] getInventory:", error.message);
+    } catch (err) {
+      console.error("[Supabase] getInventory error:", err);
     }
   }
   return getFromLocalStorage().find((i) => i.id === id) ?? null;
 }
 
 export async function deleteInventory(id: string): Promise<void> {
+  const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
       const { error } = await supabase.from("inventories").delete().eq("id", id);
       if (!error) return;
-    } catch {
-      // Fallback to localStorage
+      if (error) console.error("[Supabase] deleteInventory:", error.message);
+    } catch (err) {
+      console.error("[Supabase] deleteInventory error:", err);
     }
   }
   const inventories = getFromLocalStorage().filter((i) => i.id !== id);

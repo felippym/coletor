@@ -51,9 +51,11 @@ export default function InventoryScanPage() {
       const idx = items.findIndex((i) => i.ean === trimmed);
 
       if (idx >= 0) {
-        items[idx] = { ...items[idx], quantity: items[idx].quantity + 1 };
+        const item = { ...items[idx], quantity: items[idx].quantity + 1 };
+        items.splice(idx, 1);
+        items.unshift(item);
       } else {
-        items.push({ ean: trimmed, quantity: 1 });
+        items.unshift({ ean: trimmed, quantity: 1 });
       }
 
       const updated = { ...inventory, items };
