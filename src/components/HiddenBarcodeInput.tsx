@@ -1,0 +1,81 @@
+"use client";
+
+import { useRef, useEffect } from "react";
+
+interface HiddenBarcodeInputProps {
+  onScan: (ean: string) => void;
+  disabled?: boolean;
+}
+
+export function HiddenBarcodeInput({ onScan, disabled }: HiddenBarcodeInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const bufferRef = useRef("");
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input || disabled) return;
+
+    const focusInput = () => {
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+        return;
+      }
+      input.focus();
+    };
+    focusInput();
+    window.addEventListener("click", focusInput);
+    window.addEventListener("touchstart", focusInput);
+    const onBlur = () => {
+      requestAnimationFrame(() => {
+        if (!document.activeElement || document.activeElement === document.body) {
+          input.focus();
+        }
+      });
+    };
+    document.addEventListener("focusout", onBlur);
+    return () => {
+      window.removeEventListener("click", focusInput);
+      window.removeEventListener("touchstart", focusInput);
+      document.removeEventListener("focusout", onBlur);
+    };
+  }, [disabled]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) return;
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const value = bufferRef.current.trim();
+      if (value) {
+        onScan(value);
+        bufferRef.current = "";
+        if (inputRef.current) inputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      bufferRef.current += e.key;
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    bufferRef.current = e.target.value;
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      autoCapitalize="off"
+      autoCorrect="off"
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      disabled={disabled}
+      className="absolute h-0 w-0 opacity-0 pointer-events-none"
+      tabIndex={-1}
+      aria-hidden
+    />
+  );
+}
