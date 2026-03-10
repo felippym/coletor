@@ -21,12 +21,17 @@ export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmation
 
   return (
     <div
-      className={`fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 rounded-2xl bg-emerald-500 px-6 py-4 text-center text-white shadow-lg transition-all duration-300 ${
+      className={`fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 rounded-2xl bg-[var(--success)] px-6 py-5 text-center text-white shadow-xl transition-all duration-300 ${
         visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
       }`}
     >
-      <div className="text-2xl font-bold">✓ Escaneado!</div>
-      <div className="mt-1 font-mono text-lg">{ean}</div>
+      <div className="flex items-center justify-center gap-2 text-2xl font-bold">
+        <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Escaneado!
+      </div>
+      <div className="mt-2 font-mono text-lg">{ean}</div>
       <div className="mt-1 text-sm opacity-90">Quantidade: {quantity}</div>
     </div>
   );

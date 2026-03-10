@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getInventories } from "@/lib/storage";
+import { getInventories, deleteInventory } from "@/lib/storage";
 import type { Inventory } from "@/types/inventory";
 
 function formatDate(iso: string) {
@@ -23,27 +23,46 @@ export default function InventoriesPage() {
     getInventories().then(setInventories);
   }, []);
 
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("Excluir este inventário?")) return;
+    await deleteInventory(id);
+    setInventories((prev) => prev.filter((i) => i.id !== id));
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-black">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
+    <div className="flex min-h-screen flex-col bg-[var(--background)]">
+      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4">
           <Link
             href="/"
-            className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+            className="flex items-center gap-1 text-[var(--secondary)] transition-colors duration-200 hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 rounded-lg px-2 py-1 -ml-2"
           >
-            ← Voltar
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
           </Link>
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-lg font-semibold text-[var(--foreground)]">
             Inventários
           </h1>
         </div>
       </header>
 
       <main className="flex-1 p-4">
-        <div className="mx-auto max-w-3xl space-y-3">
+        <div className="mx-auto max-w-2xl space-y-4">
           {inventories.length === 0 ? (
-            <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
-              Nenhum inventário salvo. Inicie um novo na tela inicial.
+            <div className="rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center">
+              <p className="text-[var(--secondary)]">
+                Nenhum inventário salvo. Inicie um novo na tela inicial.
+              </p>
+              <Link
+                href="/"
+                className="mt-4 inline-block font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)]"
+              >
+                Ir para início →
+              </Link>
             </div>
           ) : (
             inventories
@@ -55,22 +74,35 @@ export default function InventoriesPage() {
                 const totalQty = inv.items.reduce((s, i) => s + i.quantity, 0);
                 const unique = inv.items.length;
                 return (
-                  <Link
+                  <div
                     key={inv.id}
-                    href={`/inventories/${inv.id}`}
-                    className="block rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                    className="group relative rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-sm transition-all duration-200 hover:border-[var(--accent)]/30 hover:shadow-md"
                   >
-                    <h2 className="font-medium text-zinc-900 dark:text-zinc-50">
-                      {inv.name}
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                      {formatDate(inv.createdAt)}
-                    </p>
-                    <div className="mt-2 flex gap-4 text-sm text-zinc-600 dark:text-zinc-400">
-                      <span>{unique} produtos</span>
-                      <span>{totalQty} itens</span>
-                    </div>
-                  </Link>
+                    <Link
+                      href={`/inventories/${inv.id}`}
+                      className="block p-5 pr-14"
+                    >
+                      <h2 className="font-semibold text-[var(--foreground)]">
+                        {inv.name}
+                      </h2>
+                      <p className="mt-1 text-sm text-[var(--secondary)]">
+                        {formatDate(inv.createdAt)}
+                      </p>
+                      <div className="mt-3 flex gap-4 text-sm font-medium text-[var(--muted)]">
+                        <span>{unique} produtos</span>
+                        <span>{totalQty} itens</span>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={(e) => handleDelete(e, inv.id)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
+                      aria-label="Excluir inventário"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 );
               })
           )}

@@ -59,7 +59,7 @@ export function BarcodeScanner({ onScan, enabled = true }: BarcodeScannerProps) 
   if (!enabled) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-zinc-900">
+    <div className="relative overflow-hidden rounded-2xl bg-[var(--primary)]">
       <video
         ref={videoRef}
         className="aspect-square w-full object-cover"
@@ -67,12 +67,12 @@ export function BarcodeScanner({ onScan, enabled = true }: BarcodeScannerProps) 
         muted
       />
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90 p-4 text-center text-sm text-red-400">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--primary)]/95 p-4 text-center text-sm text-[var(--destructive)]">
           {error}
         </div>
       )}
       {isActive && !error && (
-        <div className="absolute inset-0 border-4 border-emerald-500/50 rounded-2xl pointer-events-none" />
+        <div className="absolute inset-0 border-4 border-[var(--success)]/50 rounded-2xl pointer-events-none" />
       )}
     </div>
   );
