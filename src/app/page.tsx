@@ -15,7 +15,7 @@ export default function Home() {
             <img
               src="/logo.png"
               alt="Cutelaria do ISAÍAS"
-              className="h-24 w-auto object-contain invert sm:h-32"
+              className="logo h-24 w-auto object-contain sm:h-32"
             />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-[var(--foreground)]">

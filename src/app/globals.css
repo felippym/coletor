@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-:root {
+:root,
+[data-theme="dark"] {
   /* Cutelaria do ISAÍAS - tema escuro (padrão) */
   --background: #1a1a1a;
   --foreground: #f8fafc;
@@ -23,26 +24,24 @@
   --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    /* Cutelaria do ISAÍAS - tema claro */
-    --background: #f8fafc;
-    --foreground: #1a1a1a;
-    --surface: #ffffff;
-    --surface-hover: #fff7ed;
-    --border: #fed7aa;
-    --primary: #ff9900;
-    --primary-hover: #e68a00;
-    --primary-foreground: #ffffff;
-    --secondary: #78716c;
-    --secondary-foreground: #1a1a1a;
-    --muted: #a8a29e;
-    --accent: #ff9900;
-    --accent-hover: #e68a00;
-    --destructive: #ef4444;
-    --destructive-hover: #dc2626;
-    --success: #22c55e;
-  }
+[data-theme="light"] {
+  /* Cutelaria do ISAÍAS - tema claro */
+  --background: #f8fafc;
+  --foreground: #1a1a1a;
+  --surface: #ffffff;
+  --surface-hover: #fff7ed;
+  --border: #fed7aa;
+  --primary: #ff9900;
+  --primary-hover: #e68a00;
+  --primary-foreground: #ffffff;
+  --secondary: #78716c;
+  --secondary-foreground: #1a1a1a;
+  --muted: #a8a29e;
+  --accent: #ff9900;
+  --accent-hover: #e68a00;
+  --destructive: #ef4444;
+  --destructive-hover: #dc2626;
+  --success: #22c55e;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -77,4 +76,9 @@ button, a, [role="button"] {
 
 button:disabled, [aria-disabled="true"] {
   cursor: not-allowed;
+}
+
+/* Logo: invert apenas no tema escuro */
+[data-theme="dark"] .logo {
+  filter: invert(1);
 }
