@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getInventory, saveInventory } from "@/lib/storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
@@ -14,6 +14,7 @@ export default function InventoryScanPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [search, setSearch] = useState("");
@@ -64,8 +65,9 @@ export default function InventoryScanPage() {
       playScanSound();
       setConfirmScan({
         ean: trimmed,
-        quantity: idx >= 0 ? items[idx].quantity : 1,
+        quantity: items[0].quantity,
       });
+      setBarcodeInput("");
     },
     [inventory]
   );
@@ -102,6 +104,12 @@ export default function InventoryScanPage() {
     }
   }, [inventory, router]);
 
+  useEffect(() => {
+    if (inventory) {
+      barcodeInputRef.current?.focus();
+    }
+  }, [inventory]);
+
   if (!inventory) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
@@ -123,21 +131,24 @@ export default function InventoryScanPage() {
             <span>{uniqueProducts} produtos</span>
             <span>{totalItems} itens</span>
           </div>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-2xl space-y-4 p-4">
           <input
             type="search"
             placeholder="Buscar EAN..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mt-3 w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
           />
-        </div>
-      </header>
 
-      <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-2xl p-4">
           <input
+            ref={barcodeInputRef}
             type="text"
             inputMode="numeric"
+            autoComplete="off"
             placeholder="Digite ou escaneie o código"
             value={barcodeInput}
             onChange={(e) => setBarcodeInput(e.target.value)}
@@ -147,22 +158,21 @@ export default function InventoryScanPage() {
                 const value = barcodeInput.trim();
                 if (value) {
                   processBarcode(value);
-                  setBarcodeInput("");
                 }
               }
             }}
-            className="mb-4 w-full rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--surface)] px-4 py-3.5 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] px-4 py-3.5 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] shadow-[0_0_0_1px_var(--accent)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
           />
 
           <button
             onClick={() => setCameraEnabled((prev) => !prev)}
-            className="mb-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.99]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.99]"
           >
             {cameraEnabled ? "Ocultar câmera" : "Escanear com câmera"}
           </button>
 
           {cameraEnabled && (
-            <div className="mb-4 overflow-hidden rounded-2xl border-2 border-[var(--border)] shadow-sm">
+            <div className="overflow-hidden rounded-2xl border-2 border-[var(--border)] shadow-sm">
               <BarcodeScanner onScan={processBarcode} enabled={cameraEnabled} />
             </div>
           )}
@@ -170,7 +180,7 @@ export default function InventoryScanPage() {
           <div className="overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-sm">
             <div className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)] bg-[var(--surface-hover)] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
               <div>EAN</div>
-              <div className="w-20 text-right">Qtd</div>
+              <div className="w-20 text-right">QTD</div>
             </div>
             <div className="max-h-[40vh] min-h-[120px] overflow-y-auto overscroll-contain">
               {filteredItems.length === 0 ? (
@@ -226,7 +236,7 @@ export default function InventoryScanPage() {
 
           <button
             onClick={handleEndInventory}
-            className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)]"
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)]"
           >
             Encerrar Inventário
           </button>
