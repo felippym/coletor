@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getInventories, deleteInventory, deleteAllInventories } from "@/lib/storage";
+import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
+import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
-import type { Inventory } from "@/types/inventory";
+import type { Inventory, InventoryStatus } from "@/types/inventory";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -22,12 +23,31 @@ function formatDate(iso: string) {
 export default function InventoriesPage() {
   const { user, logout } = useAuth();
   const [inventories, setInventories] = useState<Inventory[]>([]);
+  const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
+  const [statusEditId, setStatusEditId] = useState<string | null>(null);
 
   useEffect(() => {
     getInventories().then(setInventories);
   }, []);
+
+  useEffect(() => {
+    if (!statusEditId) return;
+    const handleClick = () => setStatusEditId(null);
+    const t = setTimeout(() => document.addEventListener("click", handleClick), 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("click", handleClick);
+    };
+  }, [statusEditId]);
+
+  useEffect(() => {
+    if (!inventories.length) return;
+    const codigos = [...new Set(inventories.flatMap((inv) => inv.items.map((i) => i.ean.trim()).filter(Boolean)))];
+    if (codigos.length === 0) return;
+    getProdutosByCodigos(codigos).then(setProdutoNames);
+  }, [inventories]);
 
   const handleDeleteClick = (e: React.MouseEvent, inv: Inventory) => {
     e.preventDefault();
@@ -45,6 +65,19 @@ export default function InventoriesPage() {
   const handleConfirmDeleteAll = async () => {
     await deleteAllInventories();
     setInventories([]);
+  };
+
+  const handleStatusChange = async (inv: Inventory, newStatus: InventoryStatus) => {
+    if (user !== "admin") return;
+    const updated = { ...inv, status: newStatus };
+    await saveInventory(updated);
+    setInventories((prev) => prev.map((i) => (i.id === inv.id ? updated : i)));
+  };
+
+  const statusLabel: Record<InventoryStatus, string> = {
+    em_contagem: "Em contagem",
+    finalizado: "Finalizado",
+    importado: "Importado",
   };
 
   return (
@@ -109,6 +142,10 @@ export default function InventoriesPage() {
               .map((inv) => {
                 const totalQty = inv.items.reduce((s, i) => s + i.quantity, 0);
                 const unique = inv.items.length;
+                const naoCadastrados = inv.items.filter((i) => !produtoNames.get(i.ean)?.trim());
+                const produtosNaoCadastrados = naoCadastrados.length;
+                const itensNaoCadastrados = naoCadastrados.reduce((s, i) => s + i.quantity, 0);
+                const status = inv.status ?? "em_contagem";
                 return (
                   <div
                     key={inv.id}
@@ -118,17 +155,89 @@ export default function InventoriesPage() {
                       href={`/inventories/${inv.id}`}
                       className="block p-5 pr-14"
                     >
-                      <h2 className="font-semibold text-[var(--foreground)]">
-                        {inv.name}
-                      </h2>
+                      <div className="flex items-start justify-between gap-2">
+                        <h2 className="font-semibold text-[var(--foreground)]">
+                          {inv.name}
+                        </h2>
+                        {user !== "admin" && (
+                          <span
+                            className={`shrink-0 rounded-lg px-2 py-1 text-xs font-medium ${
+                              status === "em_contagem"
+                                ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                : status === "finalizado"
+                                  ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                                  : "bg-[var(--success)]/20 text-[var(--success)]"
+                            }`}
+                          >
+                            {statusLabel[status]}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-sm text-[var(--secondary)]">
                         {formatDate(inv.createdAt)}
                       </p>
-                      <div className="mt-3 flex gap-4 text-sm font-medium text-[var(--muted)]">
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-[var(--muted)]">
                         <span>{unique} produtos</span>
                         <span>{totalQty} itens</span>
+                        <span className={produtosNaoCadastrados > 0 ? "text-[var(--destructive)]" : ""}>
+                          {produtosNaoCadastrados} não cadastrados ({itensNaoCadastrados} itens)
+                        </span>
                       </div>
                     </Link>
+                    {user === "admin" && (
+                      <div className="absolute right-14 top-5 z-10 flex items-center gap-0.5">
+                        <span
+                          className={`shrink-0 rounded-l-lg px-2 py-1 text-xs font-medium ${
+                            status === "em_contagem"
+                              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                              : status === "finalizado"
+                                ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                                : "bg-[var(--success)]/20 text-[var(--success)]"
+                          }`}
+                        >
+                          {statusLabel[status]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setStatusEditId(statusEditId === inv.id ? null : inv.id);
+                          }}
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-r-lg text-xs font-bold transition-colors ${
+                            status === "em_contagem"
+                              ? "bg-amber-500/30 text-amber-600 hover:bg-amber-500/40 dark:text-amber-400"
+                              : status === "finalizado"
+                                ? "bg-blue-500/30 text-blue-600 hover:bg-blue-500/40 dark:text-blue-400"
+                                : "bg-[var(--success)]/30 text-[var(--success)] hover:bg-[var(--success)]/40"
+                          }`}
+                          aria-label="Alterar status"
+                        >
+                          +
+                        </button>
+                        {statusEditId === inv.id && (
+                          <div className="absolute right-0 top-full mt-1 flex flex-col rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] py-1 shadow-lg">
+                            {(["em_contagem", "finalizado", "importado"] as InventoryStatus[]).map((s) => (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleStatusChange(inv, s);
+                                  setStatusEditId(null);
+                                }}
+                                className={`px-3 py-1.5 text-left text-xs font-medium hover:bg-[var(--surface-hover)] ${
+                                  s === status ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "text-[var(--foreground)]"
+                                }`}
+                              >
+                                {statusLabel[s]}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <button
                       onClick={(e) => handleDeleteClick(e, inv)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"

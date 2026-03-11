@@ -6,7 +6,8 @@ import Link from "next/link";
 import { getInventory, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { shareTxt } from "@/lib/export";
-import type { Inventory, InventoryItem } from "@/types/inventory";
+import { useAuth } from "@/components/AuthProvider";
+import type { Inventory, InventoryItem, InventoryStatus } from "@/types/inventory";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", {
@@ -18,10 +19,17 @@ function formatDate(iso: string) {
   });
 }
 
+const statusLabel: Record<InventoryStatus, string> = {
+  em_contagem: "Em contagem",
+  finalizado: "Finalizado",
+  importado: "Importado",
+};
+
 export default function InventoryDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { user } = useAuth();
 
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [search, setSearch] = useState("");
@@ -59,11 +67,17 @@ export default function InventoryDetailsPage() {
       byName.set(key, group);
     }
 
-    return Array.from(byName.entries()).map(([groupKey, group]) => ({
-      groupKey,
-      items: group,
-      totalQty: group.reduce((s, g) => s + g.item.quantity, 0),
-    }));
+    return Array.from(byName.entries()).map(([groupKey, group]) => {
+      const firstEan = group[0].item.ean;
+      const nome = produtoNames.get(firstEan);
+      const displayLabel = nome?.trim() || "NÃO CADASTRADO";
+      return {
+        groupKey,
+        displayLabel,
+        items: group,
+        totalQty: group.reduce((s, g) => s + g.item.quantity, 0),
+      };
+    });
   }, [inventory, search, produtoNames]);
 
   const updateItem = useCallback(
@@ -151,8 +165,23 @@ export default function InventoryDetailsPage() {
 
   const handleShareTxt = useCallback(async () => {
     if (!inventory) return;
-    await shareTxt(inventory);
+    const result = await shareTxt(inventory);
+    if (result?.success) {
+      const updated = { ...inventory, status: "importado" as const };
+      setInventory(updated);
+      await saveInventory(updated);
+    }
   }, [inventory]);
+
+  const handleStatusChange = useCallback(
+    async (newStatus: InventoryStatus) => {
+      if (!inventory || user !== "admin") return;
+      const updated = { ...inventory, status: newStatus };
+      setInventory(updated);
+      await saveInventory(updated);
+    },
+    [inventory, user]
+  );
 
   if (!inventory) {
     return (
@@ -181,6 +210,29 @@ export default function InventoryDetailsPage() {
             <h1 className="truncate text-lg font-semibold text-[var(--foreground)]">
               {inventory.name}
             </h1>
+            {user === "admin" ? (
+              <select
+                value={inventory.status ?? "em_contagem"}
+                onChange={(e) => handleStatusChange(e.target.value as InventoryStatus)}
+                className="shrink-0 rounded-lg border-2 border-[var(--border)] bg-[var(--surface-hover)] px-2 py-1 text-xs font-medium text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
+              >
+                <option value="em_contagem">Em contagem</option>
+                <option value="finalizado">Finalizado</option>
+                <option value="importado">Importado</option>
+              </select>
+            ) : (
+              <span
+                className={`shrink-0 rounded-lg px-2 py-1 text-xs font-medium ${
+                  (inventory.status ?? "em_contagem") === "em_contagem"
+                    ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                    : (inventory.status ?? "em_contagem") === "finalizado"
+                      ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                      : "bg-[var(--success)]/20 text-[var(--success)]"
+                }`}
+              >
+                {statusLabel[inventory.status ?? "em_contagem"]}
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-[var(--secondary)]">
             {formatDate(inventory.createdAt)}
@@ -213,7 +265,7 @@ export default function InventoryDetailsPage() {
                   Nenhum item
                 </div>
               ) : (
-                mergedItems.map(({ groupKey, items, totalQty }) => {
+                mergedItems.map(({ groupKey, displayLabel, items, totalQty }) => {
                   const firstItem = items[0].item;
                   const codigos = items.map((g) => g.item.ean).join(", ");
                   return (
@@ -223,8 +275,8 @@ export default function InventoryDetailsPage() {
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-[var(--foreground)]">
-                          {groupKey}
-                        </div>
+                            {displayLabel}
+                          </div>
                         {items.length > 1 ? (
                           <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
                             {codigos}

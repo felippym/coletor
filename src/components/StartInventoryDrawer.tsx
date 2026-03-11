@@ -54,6 +54,7 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
       name: trimmed,
       createdAt: new Date().toISOString(),
       items: [],
+      status: "em_contagem",
     };
 
     await saveInventory(inventory);

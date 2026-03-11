@@ -47,7 +47,14 @@ create index if not exists idx_users_username on public.users (lower(username));
 alter table public.users enable row level security;
 ```
 
-6. Clique em **Run** em cada query
+6. Execute `supabase/migrations/004_add_inventory_status.sql` (coluna status):
+
+```sql
+alter table public.inventories
+  add column if not exists status text not null default 'em_contagem';
+```
+
+7. Clique em **Run** em cada query
 
 ## 2. Verificar variáveis de ambiente
 

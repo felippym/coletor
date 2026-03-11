@@ -1,4 +1,9 @@
-import type { Inventory } from "@/types/inventory";
+import type { Inventory, InventoryStatus } from "@/types/inventory";
+
+function withDefaultStatus(inv: Record<string, unknown>): Inventory {
+  const status = (inv.status as InventoryStatus) || "em_contagem";
+  return { ...inv, status } as Inventory;
+}
 import { getSupabase, isSupabaseConfigured } from "./supabase";
 
 const STORAGE_KEY = "inventories";
@@ -40,6 +45,7 @@ export async function getInventories(): Promise<Inventory[]> {
           name: row.name,
           createdAt: row.created_at,
           items: row.items ?? [],
+          status: row.status ?? "em_contagem",
         }));
       }
       if (error) console.error("[Supabase] getInventories:", error.message);
@@ -47,7 +53,7 @@ export async function getInventories(): Promise<Inventory[]> {
       console.error("[Supabase] getInventories error:", err);
     }
   }
-  return getFromLocalStorage();
+  return getFromLocalStorage().map((i) => withDefaultStatus(i as Record<string, unknown>));
 }
 
 export async function saveInventory(inventory: Inventory): Promise<void> {
@@ -60,6 +66,7 @@ export async function saveInventory(inventory: Inventory): Promise<void> {
           name: inventory.name,
           created_at: inventory.createdAt,
           items: inventory.items,
+          status: inventory.status ?? "em_contagem",
         },
         { onConflict: "id" }
       );
@@ -87,6 +94,7 @@ export async function getInventory(id: string): Promise<Inventory | null> {
           name: data.name,
           createdAt: data.created_at,
           items: data.items ?? [],
+          status: data.status ?? "em_contagem",
         };
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getInventory:", error.message);
@@ -94,7 +102,8 @@ export async function getInventory(id: string): Promise<Inventory | null> {
       console.error("[Supabase] getInventory error:", err);
     }
   }
-  return getFromLocalStorage().find((i) => i.id === id) ?? null;
+  const found = getFromLocalStorage().find((i) => i.id === id);
+  return found ? withDefaultStatus(found as Record<string, unknown>) : null;
 }
 
 export async function deleteInventory(id: string): Promise<void> {

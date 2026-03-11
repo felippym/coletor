@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "supabase:setup": "echo Abra supabase/setup-completo.sql no Supabase SQL Editor e execute",
+    "db:migrate": "node scripts/run-migration-status.js",
+    "db:migrate:open": "node scripts/open-sql-editor.js",
     "seed:produtos": "node scripts/seed-produtos.js"
   },
   "dependencies": {
@@ -15,6 +17,7 @@
     "@zxing/browser": "^0.1.5",
     "bcryptjs": "^3.0.3",
     "next": "16.1.6",
+    "pg": "^8.20.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "xlsx": "^0.18.5"

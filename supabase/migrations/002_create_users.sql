@@ -17,5 +17,5 @@ alter table public.users enable row level security;
 insert into public.users (username, password_hash) values
   ('admin', '$2b$10$MR4.0TDj51sqcjIs/vCEEucJl2wr.OrZrvVcWWPpGbY6QeWLoqSWi'),
   ('leblon', '$2b$10$9HrLCi0V/zqaEnZZJYtVl.RBZjIzjkPNT1ohz7LAHiHutCLPJmHzi'),
-  ('ipanema', '$2b$10$Q7f4dIdIPZ1OucWxSTvam.jQxi9nfT0ODd.i7pzprpyvVEF61Pj/y')
+  ('ipanema', '$2b$10$sUOVue284p6mgWnCuCgD.Ooi4fnPVHJqXc/6cAZPpd8S91RsvSvNW')
 on conflict (username) do update set password_hash = excluded.password_hash;

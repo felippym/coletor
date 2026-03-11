@@ -57,11 +57,17 @@ export default function InventoryScanPage() {
       byName.set(key, group);
     }
 
-    return Array.from(byName.entries()).map(([groupKey, group]) => ({
-      groupKey,
-      items: group,
-      totalQty: group.reduce((s, g) => s + g.item.quantity, 0),
-    }));
+    return Array.from(byName.entries()).map(([groupKey, group]) => {
+      const firstEan = group[0].item.ean;
+      const nome = produtoNames.get(firstEan);
+      const displayLabel = nome?.trim() || "NÃO CADASTRADO";
+      return {
+        groupKey,
+        displayLabel,
+        items: group,
+        totalQty: group.reduce((s, g) => s + g.item.quantity, 0),
+      };
+    });
   }, [inventory, search, produtoNames]);
 
   const processBarcode = useCallback(
@@ -159,7 +165,8 @@ export default function InventoryScanPage() {
 
   const handleEndInventory = useCallback(async () => {
     if (inventory) {
-      await saveInventory(inventory);
+      const updated = { ...inventory, status: "finalizado" as const };
+      await saveInventory(updated);
       router.push("/inventories");
     }
   }, [inventory, router]);
@@ -279,7 +286,7 @@ export default function InventoryScanPage() {
                   Escaneie códigos de barras ou digite o código
                 </div>
               ) : (
-                mergedItems.map(({ groupKey, items, totalQty }) => {
+                mergedItems.map(({ groupKey, displayLabel, items, totalQty }) => {
                   const firstItem = items[0].item;
                   const codigos = items.map((g) => g.item.ean).join(", ");
                   return (
@@ -289,7 +296,7 @@ export default function InventoryScanPage() {
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-[var(--foreground)]">
-                          {groupKey}
+                          {displayLabel}
                         </div>
                         {items.length > 1 && (
                           <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
