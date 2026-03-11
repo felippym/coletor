@@ -134,43 +134,48 @@ export default function InventoryScanPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-2xl space-y-4 p-4">
-          <input
-            type="search"
-            placeholder="Buscar EAN..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
-          />
+      <main className="flex flex-1 flex-col overflow-hidden">
+        <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-[var(--border)] bg-[var(--background)] p-4">
+          <div className="mx-auto max-w-2xl">
+            <input
+              type="search"
+              placeholder="Buscar EAN..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+            />
 
-          <input
-            ref={barcodeInputRef}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="Digite ou escaneie o código"
-            value={barcodeInput}
-            onChange={(e) => setBarcodeInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                const value = barcodeInput.trim();
-                if (value) {
-                  processBarcode(value);
+            <input
+              ref={barcodeInputRef}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="Digite ou escaneie o código"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const value = barcodeInput.trim();
+                  if (value) {
+                    processBarcode(value);
+                  }
                 }
-              }
-            }}
-            className="w-full rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] px-4 py-3.5 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] shadow-[0_0_0_1px_var(--accent)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-          />
+              }}
+              className="mt-4 w-full rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] px-4 py-3.5 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] shadow-[0_0_0_1px_var(--accent)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+            />
 
-          <button
-            onClick={() => setCameraEnabled((prev) => !prev)}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.99]"
-          >
-            {cameraEnabled ? "Ocultar câmera" : "Escanear com câmera"}
-          </button>
+            <button
+              onClick={() => setCameraEnabled((prev) => !prev)}
+              className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.99]"
+            >
+              {cameraEnabled ? "Ocultar câmera" : "Escanear com câmera"}
+            </button>
+          </div>
+        </div>
 
+        <div className="flex-1 overflow-auto">
+          <div className="mx-auto max-w-2xl space-y-4 p-4">
           {cameraEnabled && (
             <div className="overflow-hidden rounded-2xl border-2 border-[var(--border)] shadow-sm">
               <BarcodeScanner onScan={processBarcode} enabled={cameraEnabled} />
@@ -240,6 +245,7 @@ export default function InventoryScanPage() {
           >
             Encerrar Inventário
           </button>
+          </div>
         </div>
       </main>
 

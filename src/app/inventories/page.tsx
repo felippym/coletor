@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getInventories, deleteInventory } from "@/lib/storage";
+import { getInventories, deleteInventory, deleteAllInventories } from "@/lib/storage";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
+import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
 import type { Inventory } from "@/types/inventory";
 
 function formatDate(iso: string) {
@@ -20,6 +21,7 @@ function formatDate(iso: string) {
 export default function InventoriesPage() {
   const [inventories, setInventories] = useState<Inventory[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
 
   useEffect(() => {
     getInventories().then(setInventories);
@@ -38,22 +40,37 @@ export default function InventoriesPage() {
     setDeleteTarget(null);
   };
 
+  const handleConfirmDeleteAll = async () => {
+    await deleteAllInventories();
+    setInventories([]);
+  };
+
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-1 text-[var(--secondary)] transition-colors duration-200 hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 rounded-lg px-2 py-1 -ml-2"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Voltar
-          </Link>
-          <h1 className="text-lg font-semibold text-[var(--foreground)]">
-            Inventários
-          </h1>
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="flex items-center gap-1 text-[var(--secondary)] transition-colors duration-200 hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 rounded-lg px-2 py-1 -ml-2"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Voltar
+            </Link>
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">
+              Inventários
+            </h1>
+          </div>
+          {inventories.length > 0 && (
+            <button
+              onClick={() => setShowDeleteAll(true)}
+              className="rounded-xl border-2 border-[var(--destructive)] px-4 py-2 text-sm font-semibold text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
+            >
+              Deletar todos
+            </button>
+          )}
         </div>
       </header>
 
@@ -121,6 +138,11 @@ export default function InventoriesPage() {
         onConfirm={handleConfirmDelete}
         title="Excluir inventário?"
         message={deleteTarget ? `"${deleteTarget.name}" será excluído permanentemente. Esta ação não pode ser desfeita.` : undefined}
+      />
+      <DeleteAllDrawer
+        isOpen={showDeleteAll}
+        onClose={() => setShowDeleteAll(false)}
+        onConfirm={handleConfirmDeleteAll}
       />
     </div>
   );

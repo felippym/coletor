@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { saveInventory } from "@/lib/storage";
 import type { Inventory } from "@/types/inventory";
@@ -14,6 +14,7 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
   const [name, setName] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +28,13 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isVisible && isOpen) {
+      const t = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(t);
+    }
+  }, [isVisible, isOpen]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -83,11 +91,12 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
         </h2>
         <form onSubmit={handleSubmit}>
           <input
+            ref={inputRef}
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nome do inventário"
-            className="mb-4 w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-base text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+            onChange={(e) => setName(e.target.value.toUpperCase())}
+            placeholder="Nome do Inventário"
+            className="mb-4 w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-base uppercase placeholder:normal-case text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
             autoFocus
           />
           <button
