@@ -233,25 +233,43 @@ export default function InventoryScanPage() {
               className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
             />
 
-            <input
-              ref={barcodeInputRef}
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="Digite ou escaneie o código"
-              value={barcodeInput}
-              onChange={(e) => setBarcodeInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const value = barcodeInput.trim();
-                  if (value) {
-                    processBarcode(value);
+            <div className="relative mt-4">
+              <input
+                ref={barcodeInputRef}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="Digite ou escaneie o código"
+                value={barcodeInput}
+                onChange={(e) => setBarcodeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const value = barcodeInput.trim();
+                    if (value) {
+                      processBarcode(value);
+                    }
                   }
-                }
-              }}
-              className="mt-4 w-full rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] px-4 py-3.5 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] shadow-[0_0_0_1px_var(--accent)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-            />
+                }}
+                className="w-full rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] py-3.5 pl-4 pr-14 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] shadow-[0_0_0_1px_var(--accent)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+              />
+              <button
+                type="button"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  barcodeInputRef.current?.blur();
+                  const value = barcodeInput.trim();
+                  if (value) processBarcode(value);
+                }}
+                disabled={!barcodeInput.trim()}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--accent)] bg-[var(--accent)] text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 disabled:border-[var(--border)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)]"
+                aria-label="Confirmar"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
             {typingProdutoHint && (
               <p className="mt-2 text-sm text-[var(--secondary)]">
                 {typingProdutoHint}
