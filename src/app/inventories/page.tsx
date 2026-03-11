@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getInventories, deleteInventory, deleteAllInventories } from "@/lib/storage";
+import { useAuth } from "@/components/AuthProvider";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
 import type { Inventory } from "@/types/inventory";
@@ -19,6 +20,7 @@ function formatDate(iso: string) {
 }
 
 export default function InventoriesPage() {
+  const { user, logout } = useAuth();
   const [inventories, setInventories] = useState<Inventory[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
@@ -63,14 +65,24 @@ export default function InventoriesPage() {
               Inventários
             </h1>
           </div>
-          {inventories.length > 0 && (
-            <button
-              onClick={() => setShowDeleteAll(true)}
-              className="rounded-xl border-2 border-[var(--destructive)] px-4 py-2 text-sm font-semibold text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
-            >
-              Deletar todos
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {user && (
+              <button
+                onClick={logout}
+                className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
+              >
+                Sair ({user})
+              </button>
+            )}
+            {inventories.length > 0 && (
+              <button
+                onClick={() => setShowDeleteAll(true)}
+                className="rounded-xl border-2 border-[var(--destructive)] px-4 py-2 text-sm font-semibold text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
+              >
+                Deletar todos
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

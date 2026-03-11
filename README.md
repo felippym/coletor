@@ -1,5 +1,26 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Configuração (Autenticação)
+
+O app exige login ao iniciar. Usuários: `admin`, `leblon`, `ipanema`.
+
+1. Gere o arquivo `auth-hashes.json` (execute com as senhas em variáveis de ambiente):
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:AUTH_ADMIN_PASS="sua_senha_admin"
+   $env:AUTH_LEBLON_PASS="sua_senha_leblon"
+   $env:AUTH_IPANEMA_PASS="sua_senha_ipanema"
+   node scripts/generate-auth-hashes.js
+   ```
+
+   **Linux/Mac:**
+   ```bash
+   AUTH_ADMIN_PASS=sua_senha_admin AUTH_LEBLON_PASS=sua_senha_leblon AUTH_IPANEMA_PASS=sua_senha_ipanema node scripts/generate-auth-hashes.js
+   ```
+
+2. O script cria `auth-hashes.json` na raiz do projeto (já no .gitignore)
+
 ## Getting Started
 
 First, run the development server:

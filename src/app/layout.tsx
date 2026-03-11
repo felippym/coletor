@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,7 +52,7 @@ export default function RootLayout({
           }}
         />
         <ThemeSwitch />
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

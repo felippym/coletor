@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getProdutoByCodigo } from "@/lib/produtos";
 
 interface ScanConfirmationProps {
   ean: string;
@@ -10,6 +11,11 @@ interface ScanConfirmationProps {
 
 export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmationProps) {
   const [visible, setVisible] = useState(true);
+  const [produtoNome, setProdutoNome] = useState<string | null>(null);
+
+  useEffect(() => {
+    getProdutoByCodigo(ean).then((p) => setProdutoNome(p?.produto ?? null));
+  }, [ean]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,7 +37,8 @@ export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmation
         </svg>
         Escaneado!
       </div>
-      <div className="mt-2 font-mono text-lg">{ean}</div>
+      <div className="mt-2 text-lg font-medium">{produtoNome || ean}</div>
+      {produtoNome && <div className="mt-0.5 font-mono text-sm opacity-90">{ean}</div>}
       <div className="mt-1 text-sm opacity-90">Quantidade: {quantity}</div>
     </div>
   );

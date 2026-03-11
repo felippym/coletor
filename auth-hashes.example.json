@@ -1,0 +1,5 @@
+{
+  "admin": "hash_bcrypt_do_admin",
+  "leblon": "hash_bcrypt_do_leblon",
+  "ipanema": "hash_bcrypt_do_ipanema"
+}

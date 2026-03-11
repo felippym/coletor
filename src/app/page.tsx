@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Home() {
   const [showDrawer, setShowDrawer] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center bg-[var(--background)] px-4 py-8">
@@ -41,8 +43,16 @@ export default function Home() {
           </Link>
         </div>
       </main>
-      <footer className="absolute bottom-0 left-0 right-0 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center text-sm text-[var(--secondary)]">
-        desenvolvido por Felippy
+      <footer className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-2 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center text-sm text-[var(--secondary)]">
+        {user && (
+          <button
+            onClick={logout}
+            className="text-[var(--muted)] underline-offset-2 hover:underline hover:text-[var(--foreground)]"
+          >
+            Sair ({user})
+          </button>
+        )}
+        <span>desenvolvido por Felippy</span>
       </footer>
       <StartInventoryDrawer isOpen={showDrawer} onClose={() => setShowDrawer(false)} />
     </div>

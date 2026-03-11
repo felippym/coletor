@@ -1,13 +1,13 @@
 # Configurar Supabase
 
-Para que os dados sejam salvos no Supabase (e não apenas no localStorage), execute os passos abaixo.
+Para que os dados sejam salvos no Supabase (e não apenas no localStorage) e o login valide usuários no Supabase, execute os passos abaixo.
 
-## 1. Executar a migration no Supabase
+## 1. Executar as migrations no Supabase
 
 1. Acesse o [Supabase Dashboard](https://supabase.com/dashboard)
 2. Selecione seu projeto
 3. Vá em **SQL Editor** → **New query**
-4. Cole e execute o conteúdo do arquivo `supabase/migrations/001_create_inventories.sql`:
+4. Execute primeiro `supabase/migrations/001_create_inventories.sql`:
 
 ```sql
 -- Tabela de inventários
@@ -31,7 +31,23 @@ create policy "Allow authenticated for inventories"
   using (true) with check (true);
 ```
 
-5. Clique em **Run**
+5. Execute em seguida `supabase/migrations/002_create_users.sql`:
+
+```sql
+-- Tabela de usuários para autenticação
+create table if not exists public.users (
+  id uuid primary key default gen_random_uuid(),
+  username text not null unique,
+  password_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_users_username on public.users (lower(username));
+
+alter table public.users enable row level security;
+```
+
+6. Clique em **Run** em cada query
 
 ## 2. Verificar variáveis de ambiente
 
@@ -40,15 +56,40 @@ Confirme que o `.env.local` contém:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://jkgrxdscxznnbsodllmd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
+SUPABASE_SERVICE_ROLE_KEY=sua-chave-service-role
 ```
 
-## 3. Reiniciar o servidor
+A **Service Role Key** está em **Settings** → **API** no dashboard do Supabase. **Não exponha essa chave no frontend** — ela só deve ser usada no servidor (API routes).
 
-Após executar a migration, reinicie o `npm run dev`.
+## 3. Cadastrar usuários no Supabase
 
-## 4. Verificar no Supabase
+Para criar usuários no banco, use o script que gera o SQL:
 
-Após criar um inventário no app, verifique em **Table Editor** → **inventories** se os dados aparecem.
+```bash
+# Windows (PowerShell)
+$env:AUTH_ADMIN_PASS="sua_senha_admin"
+$env:AUTH_LEBLON_PASS="sua_senha_leblon"
+$env:AUTH_IPANEMA_PASS="sua_senha_ipanema"
+node scripts/seed-supabase-users.js
+
+# Linux/Mac
+AUTH_ADMIN_PASS=xxx AUTH_LEBLON_PASS=xxx AUTH_IPANEMA_PASS=xxx node scripts/seed-supabase-users.js
+```
+
+Cole o SQL gerado no **SQL Editor** do Supabase e execute.
+
+## 4. Reiniciar o servidor
+
+Após executar as migrations e configurar o `.env.local`, reinicie o `npm run dev`.
+
+## 5. Verificar no Supabase
+
+- **Inventários:** Table Editor → **inventories** — os dados aparecem após criar um inventário no app
+- **Usuários:** Table Editor → **users** — os usuários cadastrados aparecem após rodar o script
+
+## Fallback (auth-hashes.json)
+
+Se `SUPABASE_SERVICE_ROLE_KEY` não estiver configurado, o login continua usando `auth-hashes.json` (legado).
 
 ## Debug
 

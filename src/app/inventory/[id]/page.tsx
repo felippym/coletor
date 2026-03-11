@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getInventory, saveInventory } from "@/lib/storage";
+import { getProdutoByCodigo, getProdutosByCodigos } from "@/lib/produtos";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
@@ -21,6 +22,8 @@ export default function InventoryScanPage() {
   const [confirmScan, setConfirmScan] = useState<{ ean: string; quantity: number } | null>(null);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
+  const [typingProdutoHint, setTypingProdutoHint] = useState<string | null>(null);
 
   useEffect(() => {
     getInventory(id).then(setInventory);
@@ -30,46 +33,77 @@ export default function InventoryScanPage() {
     () => inventory?.items.reduce((s, i) => s + i.quantity, 0) ?? 0,
     [inventory]
   );
-  const uniqueProducts = useMemo(() => inventory?.items.length ?? 0, [inventory]);
 
-  const filteredItems = useMemo(() => {
+  /** Agrupa por nome exato do produto e unifica quantidade */
+  const mergedItems = useMemo(() => {
     if (!inventory) return [];
-    if (!search.trim()) {
-      return inventory.items.map((item, idx) => ({ item, idx }));
+    const withFilter = !search.trim()
+      ? inventory.items.map((item, idx) => ({ item, idx }))
+      : (() => {
+          const q = search.trim().toLowerCase();
+          return inventory.items
+            .map((item, idx) => ({ item, idx }))
+            .filter(({ item }) => {
+              const nome = produtoNames.get(item.ean)?.toLowerCase() ?? "";
+              return item.ean.toLowerCase().includes(q) || nome.includes(q);
+            });
+        })();
+
+    const byName = new Map<string, { item: InventoryItem; idx: number }[]>();
+    for (const { item, idx } of withFilter) {
+      const key = produtoNames.get(item.ean) || item.ean;
+      const group = byName.get(key) ?? [];
+      group.push({ item, idx });
+      byName.set(key, group);
     }
-    const q = search.trim().toLowerCase();
-    return inventory.items
-      .map((item, idx) => ({ item, idx }))
-      .filter(({ item }) => item.ean.toLowerCase().includes(q));
-  }, [inventory, search]);
+
+    return Array.from(byName.entries()).map(([groupKey, group]) => ({
+      groupKey,
+      items: group,
+      totalQty: group.reduce((s, g) => s + g.item.quantity, 0),
+    }));
+  }, [inventory, search, produtoNames]);
 
   const processBarcode = useCallback(
-    (ean: string) => {
+    async (ean: string) => {
       const trimmed = ean.trim();
       if (!trimmed || !inventory) return;
 
       const items = [...inventory.items];
-      const idx = items.findIndex((i) => i.ean === trimmed);
+      let idx = items.findIndex((i) => i.ean === trimmed);
 
       if (idx >= 0) {
         const item = { ...items[idx], quantity: items[idx].quantity + 1 };
         items.splice(idx, 1);
         items.unshift(item);
       } else {
-        items.unshift({ ean: trimmed, quantity: 1 });
+        const produto = await getProdutoByCodigo(trimmed);
+        const novoNome = produto?.produto ?? null;
+        const idxMesmoNome = novoNome
+          ? items.findIndex((i) => produtoNames.get(i.ean) === novoNome)
+          : -1;
+
+        if (idxMesmoNome >= 0) {
+          items[idxMesmoNome] = { ...items[idxMesmoNome], quantity: items[idxMesmoNome].quantity + 1 };
+          const moved = items.splice(idxMesmoNome, 1)[0];
+          items.unshift(moved);
+        } else {
+          items.unshift({ ean: trimmed, quantity: 1 });
+        }
       }
 
       const updated = { ...inventory, items };
       setInventory(updated);
       void saveInventory(updated);
       playScanSound();
-      setConfirmScan({
-        ean: trimmed,
-        quantity: items[0].quantity,
-      });
+      const firstItem = items[0];
+      const totalQty = firstItem.ean === trimmed
+        ? firstItem.quantity
+        : items.filter((i) => (produtoNames.get(i.ean) || i.ean) === (produtoNames.get(firstItem.ean) || firstItem.ean)).reduce((s, i) => s + i.quantity, 0);
+      setConfirmScan({ ean: trimmed, quantity: totalQty });
       setBarcodeInput("");
     },
-    [inventory]
+    [inventory, produtoNames]
   );
 
   const updateItem = useCallback(
@@ -97,6 +131,32 @@ export default function InventoryScanPage() {
     [inventory]
   );
 
+  /** Atualiza um grupo unificado (mesmo nome, códigos diferentes) */
+  const updateMergedGroup = useCallback(
+    (groupKey: string, newQuantity: number) => {
+      if (!inventory) return;
+      const items = [...inventory.items];
+      const indicesToUpdate = items
+        .map((item, idx) => ({ item, idx }))
+        .filter(({ item }) => (produtoNames.get(item.ean) || item.ean) === groupKey)
+        .map(({ idx }) => idx)
+        .sort((a, b) => a - b);
+
+      if (indicesToUpdate.length === 0) return;
+
+      if (newQuantity <= 0) {
+        indicesToUpdate.reverse().forEach((i) => items.splice(i, 1));
+      } else {
+        items[indicesToUpdate[0]] = { ...items[indicesToUpdate[0]], quantity: newQuantity };
+        indicesToUpdate.slice(1).reverse().forEach((i) => items.splice(i, 1));
+      }
+      const updated = { ...inventory, items };
+      setInventory(updated);
+      void saveInventory(updated);
+    },
+    [inventory, produtoNames]
+  );
+
   const handleEndInventory = useCallback(async () => {
     if (inventory) {
       await saveInventory(inventory);
@@ -109,6 +169,27 @@ export default function InventoryScanPage() {
       barcodeInputRef.current?.focus();
     }
   }, [inventory]);
+
+  // Carrega nomes dos produtos da tabela public.produtos
+  useEffect(() => {
+    if (!inventory?.items.length) return;
+    const codigos = [...new Set(inventory.items.map((i) => i.ean.trim()).filter(Boolean))];
+    if (codigos.length === 0) return;
+    getProdutosByCodigos(codigos).then(setProdutoNames);
+  }, [inventory?.items]);
+
+  // Ao digitar o código, busca o nome do produto
+  useEffect(() => {
+    const code = barcodeInput.trim();
+    if (!code || code.length < 4) {
+      setTypingProdutoHint(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      getProdutoByCodigo(code).then((p) => setTypingProdutoHint(p?.produto ?? null));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [barcodeInput]);
 
   if (!inventory) {
     return (
@@ -128,7 +209,7 @@ export default function InventoryScanPage() {
             {inventory.name}
           </h1>
           <div className="mt-1 flex gap-4 text-sm font-medium text-[var(--secondary)]">
-            <span>{uniqueProducts} produtos</span>
+            <span>{mergedItems.length} produtos</span>
             <span>{totalItems} itens</span>
           </div>
         </div>
@@ -139,7 +220,7 @@ export default function InventoryScanPage() {
           <div className="mx-auto max-w-2xl">
             <input
               type="search"
-              placeholder="Buscar EAN..."
+              placeholder="Buscar produto ou código..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
@@ -164,6 +245,11 @@ export default function InventoryScanPage() {
               }}
               className="mt-4 w-full rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] px-4 py-3.5 text-base font-mono text-[var(--foreground)] placeholder-[var(--muted)] shadow-[0_0_0_1px_var(--accent)] transition-all duration-200 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
             />
+            {typingProdutoHint && (
+              <p className="mt-2 text-sm text-[var(--secondary)]">
+                {typingProdutoHint}
+              </p>
+            )}
 
             <button
               onClick={() => setCameraEnabled((prev) => !prev)}
@@ -184,57 +270,73 @@ export default function InventoryScanPage() {
 
           <div className="overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-sm">
             <div className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)] bg-[var(--surface-hover)] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-              <div>EAN</div>
+              <div>Produto</div>
               <div className="w-20 text-right">QTD</div>
             </div>
             <div className="max-h-[40vh] min-h-[120px] overflow-y-auto overscroll-contain">
-              {filteredItems.length === 0 ? (
+              {mergedItems.length === 0 ? (
                 <div className="px-4 py-8 text-center text-[var(--secondary)]">
-                  Escaneie códigos de barras ou digite o EAN
+                  Escaneie códigos de barras ou digite o código
                 </div>
               ) : (
-                filteredItems.map(({ item, idx }) => (
-                  <div
-                    key={`${item.ean}-${idx}`}
-                    className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)] px-4 py-3 last:border-0"
-                  >
-                    <input
-                      type="text"
-                      value={item.ean}
-                      onChange={(e) => updateItem(idx, { ean: e.target.value })}
-                      className="min-w-0 rounded-lg bg-transparent font-mono text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-                    />
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() =>
-                          updateItem(idx, {
-                            quantity: Math.max(0, item.quantity - 1),
-                          })
-                        }
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[var(--surface-hover)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--border)] active:scale-95"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min={0}
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateItem(idx, {
-                            quantity: Math.max(0, parseInt(e.target.value, 10) || 0),
-                          })
-                        }
-                        className="min-h-[44px] w-14 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-center text-sm font-medium text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
-                      />
-                      <button
-                        onClick={() => updateItem(idx, { quantity: item.quantity + 1 })}
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[var(--surface-hover)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--border)] active:scale-95"
-                      >
-                        +
-                      </button>
+                mergedItems.map(({ groupKey, items, totalQty }) => {
+                  const firstItem = items[0].item;
+                  const codigos = items.map((g) => g.item.ean).join(", ");
+                  return (
+                    <div
+                      key={groupKey}
+                      className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)] px-4 py-3 last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-[var(--foreground)]">
+                          {groupKey}
+                        </div>
+                        {items.length > 1 && (
+                          <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
+                            {codigos}
+                          </div>
+                        )}
+                        {items.length === 1 && (
+                          <input
+                            type="text"
+                            value={firstItem.ean}
+                            onChange={(e) => updateItem(items[0].idx, { ean: e.target.value })}
+                            placeholder="Código"
+                            className="mt-0.5 min-w-0 rounded bg-transparent font-mono text-xs text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/30"
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() =>
+                            updateMergedGroup(groupKey, Math.max(0, totalQty - 1))
+                          }
+                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[var(--surface-hover)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-95"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={0}
+                          value={totalQty}
+                          onChange={(e) =>
+                            updateMergedGroup(
+                              groupKey,
+                              Math.max(0, parseInt(e.target.value, 10) || 0)
+                            )
+                          }
+                          className="min-h-[44px] w-14 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-center text-sm font-medium text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
+                        />
+                        <button
+                          onClick={() => updateMergedGroup(groupKey, totalQty + 1)}
+                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[var(--surface-hover)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-95"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
