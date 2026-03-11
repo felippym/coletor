@@ -53,7 +53,7 @@ export async function getInventories(): Promise<Inventory[]> {
       console.error("[Supabase] getInventories error:", err);
     }
   }
-  return getFromLocalStorage().map((i) => withDefaultStatus(i as Record<string, unknown>));
+  return getFromLocalStorage().map((i) => withDefaultStatus(i as unknown as Record<string, unknown>));
 }
 
 export async function saveInventory(inventory: Inventory): Promise<void> {
@@ -103,7 +103,7 @@ export async function getInventory(id: string): Promise<Inventory | null> {
     }
   }
   const found = getFromLocalStorage().find((i) => i.id === id);
-  return found ? withDefaultStatus(found as Record<string, unknown>) : null;
+  return found ? withDefaultStatus(found as unknown as Record<string, unknown>) : null;
 }
 
 export async function deleteInventory(id: string): Promise<void> {
