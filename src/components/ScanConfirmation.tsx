@@ -12,22 +12,32 @@ interface ScanConfirmationProps {
 export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmationProps) {
   const [visible, setVisible] = useState(true);
   const [produtoNome, setProdutoNome] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    getProdutoByCodigo(ean).then((p) => setProdutoNome(p?.produto ?? null));
+    getProdutoByCodigo(ean).then((p) => {
+      setProdutoNome(p?.produto ?? null);
+      setLoaded(true);
+    });
   }, [ean]);
 
   useEffect(() => {
+    if (!loaded) return;
     const timer = setTimeout(() => {
       setVisible(false);
       setTimeout(onComplete, 300);
     }, 600);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [loaded, onComplete]);
+
+  const cadastrado = !!produtoNome?.trim();
+  const bgColor = cadastrado ? "bg-[var(--success)]" : "bg-[var(--destructive)]";
+
+  if (!loaded) return null;
 
   return (
     <div
-      className={`fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 rounded-2xl bg-[var(--success)] px-6 py-5 text-center text-white shadow-xl transition-all duration-300 ${
+      className={`fixed inset-x-4 top-1/2 z-40 -translate-y-1/2 rounded-2xl px-6 py-5 text-center text-white shadow-xl transition-all duration-300 ${bgColor} ${
         visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
       }`}
     >

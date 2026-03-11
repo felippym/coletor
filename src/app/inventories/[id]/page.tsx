@@ -274,9 +274,15 @@ export default function InventoryDetailsPage() {
                       className="grid grid-cols-[1fr_auto_auto] gap-2 border-b border-[var(--border)] px-4 py-3 last:border-0"
                     >
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-[var(--foreground)]">
-                            {displayLabel}
-                          </div>
+                        <div
+                          className={`text-sm font-medium ${
+                            displayLabel === "NÃO CADASTRADO"
+                              ? "text-[var(--destructive)]"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          {displayLabel}
+                        </div>
                         {items.length > 1 ? (
                           <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
                             {codigos}
