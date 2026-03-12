@@ -34,6 +34,7 @@ export default function InventoryDetailsPage() {
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [search, setSearch] = useState("");
   const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
+  const [expandedCodesKey, setExpandedCodesKey] = useState<string | null>(null);
 
   useEffect(() => {
     getInventory(id).then(setInventory);
@@ -266,14 +267,13 @@ export default function InventoryDetailsPage() {
                 </div>
               ) : (
                 mergedItems.map(({ groupKey, displayLabel, items, totalQty }) => {
-                  const firstItem = items[0].item;
                   const codigos = items.map((g) => g.item.ean).join(", ");
                   return (
                     <div
                       key={groupKey}
                       className="grid grid-cols-[1fr_auto_auto] gap-2 border-b border-[var(--border)] px-4 py-3 last:border-0"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 overflow-visible">
                         <div
                           className={`text-sm font-medium ${
                             displayLabel === "NÃO CADASTRADO"
@@ -283,18 +283,42 @@ export default function InventoryDetailsPage() {
                         >
                           {displayLabel}
                         </div>
-                        {items.length > 1 ? (
-                          <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
-                            {codigos}
+                        {displayLabel !== "NÃO CADASTRADO" && (
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                            <span className="inline-flex shrink-0 items-center rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">
+                              {items.length} {items.length === 1 ? "código" : "códigos"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedCodesKey(expandedCodesKey === groupKey ? null : groupKey);
+                              }}
+                              className="inline-flex shrink-0 touch-manipulation items-center gap-0.5 rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 font-mono text-xs text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] active:bg-[var(--surface-hover)]"
+                            >
+                              {expandedCodesKey === groupKey ? (
+                                <>
+                                  Ocultar
+                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                </>
+                              ) : (
+                                <>
+                                  Ver códigos
+                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </>
+                              )}
+                            </button>
+                            {expandedCodesKey === groupKey && (
+                              <div className="mt-1 w-full rounded-lg bg-[var(--surface-hover)] px-2 py-1.5 font-mono text-xs text-[var(--muted)]">
+                                {codigos}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <input
-                            type="text"
-                            value={firstItem.ean}
-                            onChange={(e) => updateItem(items[0].idx, { ean: e.target.value })}
-                            placeholder="Código"
-                            className="mt-0.5 min-w-0 rounded bg-transparent font-mono text-xs text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/30"
-                          />
                         )}
                       </div>
                       <input
