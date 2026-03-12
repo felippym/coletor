@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getProdutoByCodigo } from "@/lib/produtos";
+import { playScanSound, playScanErrorSound } from "@/lib/scan-sound";
 
 interface ScanConfirmationProps {
   ean: string;
@@ -16,8 +17,14 @@ export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmation
 
   useEffect(() => {
     getProdutoByCodigo(ean).then((p) => {
-      setProdutoNome(p?.produto ?? null);
+      const nome = p?.produto ?? null;
+      setProdutoNome(nome);
       setLoaded(true);
+      if (nome?.trim()) {
+        playScanSound();
+      } else {
+        playScanErrorSound();
+      }
     });
   }, [ean]);
 

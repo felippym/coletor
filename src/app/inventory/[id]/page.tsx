@@ -8,7 +8,6 @@ import { getProdutoByCodigo, getProdutosByCodigos } from "@/lib/produtos";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
-import { playScanSound } from "@/lib/scan-sound";
 import type { Inventory, InventoryItem } from "@/types/inventory";
 
 export default function InventoryScanPage() {
@@ -101,7 +100,6 @@ export default function InventoryScanPage() {
       const updated = { ...inventory, items };
       setInventory(updated);
       void saveInventory(updated);
-      playScanSound();
       const firstItem = items[0];
       const totalQty = firstItem.ean === trimmed
         ? firstItem.quantity
@@ -239,6 +237,7 @@ export default function InventoryScanPage() {
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
+                autoFocus
                 placeholder="Digite ou escaneie o código"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}

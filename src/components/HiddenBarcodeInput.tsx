@@ -15,6 +15,9 @@ export function HiddenBarcodeInput({ onScan, disabled }: HiddenBarcodeInputProps
     const input = inputRef.current;
     if (!input || disabled) return;
 
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    if (isTouchDevice) return;
+
     const focusInput = () => {
       if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
         return;
@@ -23,7 +26,6 @@ export function HiddenBarcodeInput({ onScan, disabled }: HiddenBarcodeInputProps
     };
     focusInput();
     window.addEventListener("click", focusInput);
-    window.addEventListener("touchstart", focusInput);
     const onBlur = () => {
       requestAnimationFrame(() => {
         if (!document.activeElement || document.activeElement === document.body) {
@@ -34,7 +36,6 @@ export function HiddenBarcodeInput({ onScan, disabled }: HiddenBarcodeInputProps
     document.addEventListener("focusout", onBlur);
     return () => {
       window.removeEventListener("click", focusInput);
-      window.removeEventListener("touchstart", focusInput);
       document.removeEventListener("focusout", onBlur);
     };
   }, [disabled]);
