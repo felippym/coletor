@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Package, Trash2, Plus, Clock, Box } from "lucide-react";
 import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
@@ -89,6 +90,18 @@ export default function InventoriesPage() {
     em_contagem: "Em contagem",
     finalizado: "Finalizado",
     importado: "Importado",
+  };
+
+  const statusConfig: Record<InventoryStatus, { className: string }> = {
+    importado: {
+      className: "bg-[var(--success)]/15 text-[var(--success)] border-[var(--success)]/30",
+    },
+    em_contagem: {
+      className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    },
+    finalizado: {
+      className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+    },
   };
 
   return (
@@ -190,54 +203,80 @@ export default function InventoriesPage() {
                 const produtosNaoCadastrados = naoCadastrados.length;
                 const itensNaoCadastrados = naoCadastrados.reduce((s, i) => s + i.quantity, 0);
                 const status = inv.status ?? "em_contagem";
+                const { className: statusClass } = statusConfig[status];
+                const formattedDate = formatDate(inv.createdAt);
+
                 return (
                   <div
                     key={inv.id}
-                    className="group relative rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-sm transition-all duration-200 hover:border-[var(--accent)]/30 hover:shadow-md"
+                    className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-5 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
                   >
                     <Link
                       href={`/inventories/${inv.id}`}
-                      className="block p-5 pr-14"
+                      className={`block -m-5 p-5 ${user === "admin" ? "pr-10" : "pr-5"}`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <h2 className="font-semibold text-[var(--foreground)]">
-                          {inv.name}
-                        </h2>
+                      {/* Top row */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-hover)]">
+                            <Package className="h-5 w-5 text-[var(--muted)]" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-[var(--foreground)] text-base tracking-tight">
+                              {inv.name}
+                            </h3>
+                            <div className="flex items-center gap-1.5 mt-0.5 text-sm text-[var(--muted)]">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{formattedDate}</span>
+                            </div>
+                          </div>
+                        </div>
+
                         {user !== "admin" && (
                           <span
-                            className={`shrink-0 rounded-lg px-2 py-1 text-xs font-medium ${
-                              status === "em_contagem"
-                                ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                                : status === "finalizado"
-                                  ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
-                                  : "bg-[var(--success)]/20 text-[var(--success)]"
-                            }`}
+                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium shrink-0 ${statusClass}`}
                           >
                             {statusLabel[status]}
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-[var(--secondary)]">
-                        {formatDate(inv.createdAt)}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-[var(--muted)]">
-                        <span>{unique} produtos</span>
-                        <span>{totalQty} itens</span>
-                        <span className={produtosNaoCadastrados > 0 ? "text-[var(--destructive)]" : ""}>
-                          {produtosNaoCadastrados} não cadastrados ({itensNaoCadastrados} itens)
-                        </span>
+
+                      {/* Bottom row */}
+                      <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]/50">
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1.5 text-[var(--muted)]">
+                            <Box className="h-3.5 w-3.5" />
+                            <span>
+                              <span className="font-medium text-[var(--foreground)]">{unique}</span> produtos
+                            </span>
+                          </div>
+                          <span className="text-[var(--border)]">•</span>
+                          <span className="text-[var(--muted)]">
+                            <span className="font-medium text-[var(--foreground)]">{totalQty}</span> itens
+                          </span>
+                          {produtosNaoCadastrados > 0 && (
+                            <>
+                              <span className="text-[var(--border)]">•</span>
+                              <span className="text-[var(--destructive)] font-medium text-xs">
+                                {produtosNaoCadastrados} não cadastrados ({itensNaoCadastrados} itens)
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteClick(e, inv)}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]"
+                          aria-label="Excluir inventário"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </Link>
+
                     {user === "admin" && (
-                      <div className="absolute right-14 top-5 z-10 flex items-center gap-0.5">
+                      <div className="absolute right-10 top-5 z-10 flex items-center gap-2">
                         <span
-                          className={`shrink-0 rounded-l-lg px-2 py-1 text-xs font-medium ${
-                            status === "em_contagem"
-                              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                              : status === "finalizado"
-                                ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
-                                : "bg-[var(--success)]/20 text-[var(--success)]"
-                          }`}
+                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusClass}`}
                         >
                           {statusLabel[status]}
                         </span>
@@ -248,19 +287,13 @@ export default function InventoriesPage() {
                             e.stopPropagation();
                             setStatusEditId(statusEditId === inv.id ? null : inv.id);
                           }}
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-r-lg text-xs font-bold transition-colors ${
-                            status === "em_contagem"
-                              ? "bg-amber-500/30 text-amber-600 hover:bg-amber-500/40 dark:text-amber-400"
-                              : status === "finalizado"
-                                ? "bg-blue-500/30 text-blue-600 hover:bg-blue-500/40 dark:text-blue-400"
-                                : "bg-[var(--success)]/30 text-[var(--success)] hover:bg-[var(--success)]/40"
-                          }`}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-hover)] text-[var(--muted)] transition-colors hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
                           aria-label="Alterar status"
                         >
-                          +
+                          <Plus className="h-4 w-4" />
                         </button>
                         {statusEditId === inv.id && (
-                          <div className="absolute right-0 top-full mt-1 flex flex-col rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] py-1 shadow-lg">
+                          <div className="absolute right-0 top-full mt-1 flex flex-col rounded-lg border border-[var(--border)] bg-[var(--surface)] py-1 shadow-lg">
                             {(["em_contagem", "finalizado", "importado"] as InventoryStatus[]).map((s) => (
                               <button
                                 key={s}
@@ -282,15 +315,6 @@ export default function InventoriesPage() {
                         )}
                       </div>
                     )}
-                    <button
-                      onClick={(e) => handleDeleteClick(e, inv)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
-                      aria-label="Excluir inventário"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
                   </div>
                 );
               })
