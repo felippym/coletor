@@ -27,6 +27,7 @@ export default function InventoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [statusEditId, setStatusEditId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     getInventories().then(setInventories);
@@ -41,6 +42,16 @@ export default function InventoriesPage() {
       document.removeEventListener("click", handleClick);
     };
   }, [statusEditId]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = () => setMenuOpen(false);
+    const t = setTimeout(() => document.addEventListener("click", handleClick), 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("click", handleClick);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!inventories.length) return;
@@ -82,38 +93,71 @@ export default function InventoriesPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
-      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="flex items-center gap-1 text-[var(--secondary)] transition-colors duration-200 hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 rounded-lg px-2 py-1 -ml-2"
+      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4 pr-14">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-1 text-[var(--secondary)] transition-colors duration-200 hover:text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 rounded-lg px-2 py-1 -ml-2"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </Link>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-[var(--foreground)]">
+            Inventários
+          </h1>
+          <div className="relative shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((prev) => !prev);
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+              aria-label="Menu de ações"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="6" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="12" cy="18" r="1.5" />
               </svg>
-              Voltar
-            </Link>
-            <h1 className="text-lg font-semibold text-[var(--foreground)]">
-              Inventários
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {user && (
-              <button
-                onClick={logout}
-                className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
+            </button>
+            {menuOpen && (
+              <div
+                className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] py-2 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
               >
-                Sair ({user})
-              </button>
-            )}
-            {inventories.length > 0 && (
-              <button
-                onClick={() => setShowDeleteAll(true)}
-                className="rounded-xl border-2 border-[var(--destructive)] px-4 py-2 text-sm font-semibold text-[var(--destructive)] transition-all duration-200 hover:bg-[var(--destructive)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--destructive)] focus:ring-offset-2"
-              >
-                Deletar todos
-              </button>
+                {user && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      logout();
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
+                  >
+                    <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sair ({user})
+                  </button>
+                )}
+                {inventories.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowDeleteAll(true);
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-[var(--destructive)] hover:bg-[var(--destructive)]/10"
+                  >
+                    <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Deletar todos os inventários
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
