@@ -1,5 +1,6 @@
 {
   "admin": "hash_bcrypt_do_admin",
   "leblon": "hash_bcrypt_do_leblon",
-  "ipanema": "hash_bcrypt_do_ipanema"
+  "ipanema": "hash_bcrypt_do_ipanema",
+  "visitante": "hash_bcrypt_do_visitante"
 }

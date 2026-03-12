@@ -6,10 +6,11 @@
  *   $env:AUTH_ADMIN_PASS="sua_senha_admin"
  *   $env:AUTH_LEBLON_PASS="sua_senha_leblon"
  *   $env:AUTH_IPANEMA_PASS="sua_senha_ipanema"
+ *   $env:AUTH_VISITANTE_PASS="sua_senha_visitante"
  *   node scripts/generate-auth-hashes.js
  *
  * Linux/Mac:
- *   AUTH_ADMIN_PASS=xxx AUTH_LEBLON_PASS=xxx AUTH_IPANEMA_PASS=xxx node scripts/generate-auth-hashes.js
+ *   AUTH_ADMIN_PASS=xxx AUTH_LEBLON_PASS=xxx AUTH_IPANEMA_PASS=xxx AUTH_VISITANTE_PASS=xxx node scripts/generate-auth-hashes.js
  */
 
 const bcrypt = require("bcryptjs");
@@ -20,6 +21,7 @@ const USERS = [
   { key: "admin", env: "AUTH_ADMIN_PASS" },
   { key: "leblon", env: "AUTH_LEBLON_PASS" },
   { key: "ipanema", env: "AUTH_IPANEMA_PASS" },
+  { key: "visitante", env: "AUTH_VISITANTE_PASS" },
 ];
 
 async function main() {
