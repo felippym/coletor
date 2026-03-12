@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { AuthProvider } from "@/components/AuthProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,7 +53,9 @@ export default function RootLayout({
           }}
         />
         <ThemeSwitch />
-        <AuthProvider>{children}</AuthProvider>
+        <TooltipProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

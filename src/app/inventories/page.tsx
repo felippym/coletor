@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Trash2, Plus, Clock, Box } from "lucide-react";
+import { Package, Trash2, Plus, Clock, Box, AlertTriangle } from "lucide-react";
 import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
@@ -257,8 +257,9 @@ export default function InventoriesPage() {
                           {produtosNaoCadastrados > 0 && (
                             <>
                               <span className="text-[var(--border)]">•</span>
-                              <span className="text-[var(--destructive)] font-medium text-xs">
-                                {produtosNaoCadastrados} não cadastrados ({itensNaoCadastrados} itens)
+                              <span className="inline-flex items-center gap-1 text-[var(--destructive)]">
+                                <span className="text-sm font-medium">{produtosNaoCadastrados}</span>
+                                <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Não cadastrado" />
                               </span>
                             </>
                           )}

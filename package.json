@@ -13,6 +13,8 @@
     "seed:produtos": "node scripts/seed-produtos.js"
   },
   "dependencies": {
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/supabase-js": "^2.99.0",
     "@zxing/browser": "^0.1.5",
     "bcryptjs": "^3.0.3",
