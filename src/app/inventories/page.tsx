@@ -266,7 +266,7 @@ export default function InventoriesPage() {
                         </div>
                         <button
                           onClick={(e) => handleDeleteClick(e, inv)}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
                           aria-label="Excluir inventário"
                         >
                           <Trash2 className="h-4 w-4" />

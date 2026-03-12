@@ -3,8 +3,35 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Clock, Package, Box } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
+import type { InventoryStatus } from "@/types/inventory";
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+}
+
+const statusLabel: Record<InventoryStatus, string> = {
+  em_contagem: "Em contagem",
+  finalizado: "Finalizado",
+  importado: "Importado",
+};
+
+const statusConfig: Record<InventoryStatus, { className: string }> = {
+  importado: {
+    className: "bg-[var(--success)]/15 text-[var(--success)] border-[var(--success)]/30",
+  },
+  em_contagem: {
+    className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  },
+  finalizado: {
+    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+  },
+};
 import { getProdutoByCodigo, getProdutosByCodigos } from "@/lib/produtos";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -212,13 +239,48 @@ export default function InventoryScanPage() {
       <HiddenBarcodeInput onScan={processBarcode} />
 
       <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-2xl px-4 py-4">
-          <h1 className="truncate text-lg font-semibold text-[var(--foreground)]">
-            {inventory.name}
-          </h1>
-          <div className="mt-1 flex gap-4 text-sm font-medium text-[var(--secondary)]">
-            <span>{mergedItems.length} produtos</span>
-            <span>{totalItems} itens</span>
+        <div className="mx-auto max-w-2xl px-4 py-4 pr-20">
+          {/* Linha 1: Voltar | Nome | Status */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <Link
+              href="/inventories"
+              className="flex w-fit items-center gap-1.5 text-[var(--secondary)] transition-colors hover:text-[var(--foreground)]"
+            >
+              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Voltar</span>
+            </Link>
+            <h1 className="min-w-0 truncate text-center text-xl font-semibold text-[var(--foreground)]">
+              {inventory.name}
+            </h1>
+            <div className="flex justify-end">
+              <span
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${statusConfig[inventory.status ?? "em_contagem"].className}`}
+              >
+                {statusLabel[inventory.status ?? "em_contagem"]}
+              </span>
+            </div>
+          </div>
+
+          {/* Linha 2: Data e resumo */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[var(--muted)]">
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 shrink-0" />
+              {formatDate(inventory.createdAt)}
+            </span>
+            <span className="text-[var(--border)]" aria-hidden>•</span>
+            <span className="flex items-center gap-1.5">
+              <Package className="h-4 w-4 shrink-0" />
+              <span className="font-medium text-[var(--foreground)]">{mergedItems.length}</span>
+              <span>produtos</span>
+            </span>
+            <span className="text-[var(--border)]" aria-hidden>•</span>
+            <span className="flex items-center gap-1.5">
+              <Box className="h-4 w-4 shrink-0" />
+              <span className="font-medium text-[var(--foreground)]">{totalItems}</span>
+              <span>itens</span>
+            </span>
           </div>
         </div>
       </header>
