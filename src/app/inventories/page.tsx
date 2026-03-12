@@ -254,15 +254,23 @@ export default function InventoriesPage() {
                           <span className="text-[var(--muted)]">
                             <span className="font-medium text-[var(--foreground)]">{totalQty}</span> itens
                           </span>
-                          {produtosNaoCadastrados > 0 && (
-                            <>
-                              <span className="text-[var(--border)]">•</span>
+                          <>
+                            <span className="text-[var(--border)]">•</span>
+                            {produtosNaoCadastrados > 0 ? (
                               <span className="inline-flex items-center gap-1 text-[var(--destructive)]">
                                 <span className="text-sm font-medium">{produtosNaoCadastrados}</span>
                                 <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Não cadastrado" />
                               </span>
-                            </>
-                          )}
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-[var(--success)]">
+                                <span
+                                  className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--success)]"
+                                  aria-hidden
+                                />
+                                <span className="text-sm font-medium">validado</span>
+                              </span>
+                            )}
+                          </>
                         </div>
                         <button
                           onClick={(e) => handleDeleteClick(e, inv)}
