@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Minus, Plus } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
 import { getProdutoByCodigo, getProdutosByCodigos } from "@/lib/produtos";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
@@ -294,8 +295,8 @@ export default function InventoryScanPage() {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] shadow-sm">
-            <div className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)] bg-[var(--surface-hover)] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--border)]/60 bg-[var(--surface)] transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg">
+            <div className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)]/50 bg-[var(--surface-hover)] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
               <div>Produto</div>
               <div className="w-20 text-right">QTD</div>
             </div>
@@ -310,7 +311,7 @@ export default function InventoryScanPage() {
                   return (
                     <div
                       key={groupKey}
-                      className="grid grid-cols-[1fr_auto] gap-2 border-b border-[var(--border)] px-4 py-3 last:border-0"
+                      className="grid grid-cols-[1fr_auto] items-center gap-2 border-b border-[var(--border)]/50 px-4 py-3 last:border-0"
                     >
                       <div className="min-w-0 overflow-visible">
                         <div
@@ -365,14 +366,17 @@ export default function InventoryScanPage() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <button
+                          type="button"
                           onClick={() =>
                             updateMergedGroup(groupKey, Math.max(0, totalQty - 1))
                           }
-                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[var(--surface-hover)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-95"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
+                          disabled={totalQty <= 0}
+                          aria-label="Diminuir quantidade"
                         >
-                          −
+                          <Minus className="h-4 w-4" />
                         </button>
                         <input
                           type="number"
@@ -384,13 +388,15 @@ export default function InventoryScanPage() {
                               Math.max(0, parseInt(e.target.value, 10) || 0)
                             )
                           }
-                          className="min-h-[44px] w-14 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-center text-sm font-medium text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
+                          className="h-8 w-12 rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] text-center text-sm font-medium text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <button
+                          type="button"
                           onClick={() => updateMergedGroup(groupKey, totalQty + 1)}
-                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[var(--surface-hover)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-95"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
+                          aria-label="Aumentar quantidade"
                         >
-                          +
+                          <Plus className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
