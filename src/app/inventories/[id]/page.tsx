@@ -283,6 +283,11 @@ export default function InventoryDetailsPage() {
                         >
                           {displayLabel}
                         </div>
+                        {displayLabel === "NÃO CADASTRADO" && (
+                          <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
+                            {codigos}
+                          </div>
+                        )}
                         {displayLabel !== "NÃO CADASTRADO" && (
                           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                             <span className="inline-flex shrink-0 items-center rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--foreground)]">
