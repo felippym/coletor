@@ -52,7 +52,7 @@ export default function Home() {
             Sair ({user})
           </button>
         )}
-        <span>desenvolvido por Felippy</span>
+        <span>desenvolvido por Felippy 🚀</span>
       </footer>
       <StartInventoryDrawer isOpen={showDrawer} onClose={() => setShowDrawer(false)} />
     </div>

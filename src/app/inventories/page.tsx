@@ -8,6 +8,7 @@ import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
+import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
 import type { Inventory, InventoryStatus } from "@/types/inventory";
 
 function formatDate(iso: string) {
@@ -29,6 +30,7 @@ export default function InventoriesPage() {
   const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [statusEditId, setStatusEditId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showStartDrawer, setShowStartDrawer] = useState(false);
 
   useEffect(() => {
     getInventories().then(setInventories);
@@ -178,6 +180,15 @@ export default function InventoriesPage() {
 
       <main className="flex-1 p-4">
         <div className="mx-auto max-w-2xl space-y-4">
+          <button
+            onClick={() => setShowStartDrawer(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3 font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Iniciar novo inventário
+          </button>
           {inventories.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center">
               <p className="text-[var(--secondary)]">
@@ -341,6 +352,10 @@ export default function InventoriesPage() {
         isOpen={showDeleteAll}
         onClose={() => setShowDeleteAll(false)}
         onConfirm={handleConfirmDeleteAll}
+      />
+      <StartInventoryDrawer
+        isOpen={showStartDrawer}
+        onClose={() => setShowStartDrawer(false)}
       />
     </div>
   );
