@@ -10,7 +10,8 @@
     "supabase:setup": "echo Abra supabase/setup-completo.sql no Supabase SQL Editor e execute",
     "db:migrate": "node scripts/run-migration-status.js",
     "db:migrate:open": "node scripts/open-sql-editor.js",
-    "seed:produtos": "node scripts/seed-produtos.js"
+    "seed:produtos": "node scripts/seed-produtos.js",
+    "auth:env": "node scripts/print-auth-hashes-env.js"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.15",
