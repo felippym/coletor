@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root,
 [data-theme="dark"] {
   /* Cutelaria do ISAÍAS - tema escuro (padrão) */
@@ -58,15 +64,17 @@
 }
 
 html {
-  min-height: 100dvh;
+  /* 100vh fallback para navegadores antigos; 100dvh para iOS/correct viewport */
   min-height: 100vh;
+  min-height: 100dvh;
   /* PWA: evita overscroll/bounce em standalone */
   overscroll-behavior: none;
 }
 
 body {
-  min-height: 100dvh;
+  margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
@@ -94,6 +102,6 @@ button:disabled, [aria-disabled="true"] {
 
 /* Altura mínima para mobile (100dvh evita corte pela barra do navegador) */
 .min-h-dvh {
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: 100dvh;
 }
