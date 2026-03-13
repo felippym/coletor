@@ -238,7 +238,7 @@ export default function InventoryScanPage() {
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
       <HiddenBarcodeInput onScan={processBarcode} />
 
-      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-4 py-4 pr-20">
           {/* Linha 1: Voltar | Nome | Status */}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
