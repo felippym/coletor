@@ -1,6 +1,6 @@
 /**
- * Imprime o valor de AUTH_HASHES_JSON para usar em produção (Vercel, etc).
- * Também grava em .env.production.local para uso local.
+ * Gera AUTH_HASHES_B64 (Base64) e AUTH_HASHES_JSON para produção.
+ * Use AUTH_HASHES_B64 na Vercel (evita corrupção de caracteres $ e ").
  * Execute: node scripts/print-auth-hashes-env.js
  */
 
@@ -16,14 +16,15 @@ if (!fs.existsSync(filePath)) {
 
 const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 const json = JSON.stringify(data);
+const b64 = Buffer.from(json, "utf-8").toString("base64");
 
 // Grava em .env.production.local (gitignored)
 const envPath = path.join(process.cwd(), ".env.production.local");
-const envLine = `AUTH_HASHES_JSON=${json}`;
-fs.writeFileSync(envPath, envLine + "\n", "utf-8");
-console.log(`\n✓ AUTH_HASHES_JSON gravado em .env.production.local`);
+const envContent = `AUTH_HASHES_B64=${b64}\n`;
+fs.writeFileSync(envPath, envContent, "utf-8");
+console.log(`\n✓ AUTH_HASHES_B64 gravado em .env.production.local`);
 
-// Também imprime para copiar manualmente na Vercel
-console.log("\n=== Para Vercel: copie o valor abaixo em Settings > Environment Variables ===\n");
-console.log(json);
+// Imprime para copiar na Vercel
+console.log("\n=== Para Vercel: use AUTH_HASHES_B64 (recomendado) ===\n");
+console.log(b64);
 console.log("\n=== Fim ===\n");
