@@ -263,20 +263,20 @@ export default function InventoryScanPage() {
             </div>
           </div>
 
-          {/* Linha 2: Data e resumo */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[var(--muted)]">
-            <span className="flex items-center gap-1.5">
+          {/* Linha 2: Data e resumo - estende para evitar corte do "itens" */}
+          <div className="-mx-4 mt-3 flex flex-nowrap items-center gap-x-3 overflow-x-auto px-4 pb-1 pr-24 text-sm text-[var(--muted)] [&::-webkit-scrollbar]:hidden">
+            <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
               <Clock className="h-4 w-4 shrink-0" />
               {formatDate(inventory.createdAt)}
             </span>
-            <span className="text-[var(--border)]" aria-hidden>•</span>
-            <span className="flex items-center gap-1.5">
+            <span className="shrink-0 text-[var(--border)]" aria-hidden>•</span>
+            <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
               <Package className="h-4 w-4 shrink-0" />
               <span className="font-medium text-[var(--foreground)]">{mergedItems.length}</span>
               <span>produtos</span>
             </span>
-            <span className="text-[var(--border)]" aria-hidden>•</span>
-            <span className="flex items-center gap-1.5">
+            <span className="shrink-0 text-[var(--border)]" aria-hidden>•</span>
+            <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
               <Box className="h-4 w-4 shrink-0" />
               <span className="font-medium text-[var(--foreground)]">{totalItems}</span>
               <span>itens</span>
