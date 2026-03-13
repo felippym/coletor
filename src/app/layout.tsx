@@ -25,6 +25,18 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Inventário de Loja",
   description: "Contagem de estoque com leitura de código de barras",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Inventário de Loja",
+  },
+  icons: {
+    apple: "/logo.png",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -33,6 +45,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+  ],
 };
 
 export default function RootLayout({

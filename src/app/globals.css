@@ -60,6 +60,8 @@
 html {
   min-height: 100dvh;
   min-height: 100vh;
+  /* PWA: evita overscroll/bounce em standalone */
+  overscroll-behavior: none;
 }
 
 body {
