@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
-import { useAuth } from "@/components/AuthProvider";
+import { UserLojaHeader, SairButton } from "@/components/UserLojaHeader";
 
 export default function Home() {
   const [showDrawer, setShowDrawer] = useState(false);
-  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-[var(--background)]">
+      <UserLojaHeader showSairButton={false} />
       <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-4">
         <div className="flex w-full max-w-md flex-col items-center gap-4 sm:gap-6">
           <div className="flex flex-col items-center gap-4 text-center sm:gap-6">
@@ -45,15 +45,8 @@ export default function Home() {
           </div>
         </div>
       </main>
-      <footer className="flex shrink-0 flex-col items-center gap-1 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-sm text-[var(--secondary)] sm:gap-2 sm:py-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-        {user && (
-          <button
-            onClick={logout}
-            className="text-[var(--muted)] underline-offset-2 hover:underline hover:text-[var(--foreground)]"
-          >
-            Sair ({user})
-          </button>
-        )}
+      <footer className="flex shrink-0 flex-col items-center gap-3 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-sm text-[var(--secondary)] sm:gap-4 sm:py-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <SairButton />
         <span>desenvolvido por Felippy 🚀</span>
       </footer>
       <StartInventoryDrawer isOpen={showDrawer} onClose={() => setShowDrawer(false)} />

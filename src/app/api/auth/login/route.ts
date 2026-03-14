@@ -3,6 +3,24 @@ import bcrypt from "bcryptjs";
 import { getSupabaseServer, getSupabaseServerAnon } from "@/lib/supabase";
 import { getAuthHashes } from "@/lib/auth-hashes";
 
+async function fetchUserProfile(
+  username: string
+): Promise<{ userId: string; lojaId: string | null; lojaName: string | null } | null> {
+  const supabase = getSupabaseServer();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("users")
+    .select("id, loja_id, lojas(name)")
+    .ilike("username", username)
+    .maybeSingle();
+  if (!data) return null;
+  const lojaName =
+    data.loja_id && typeof data.lojas === "object" && data.lojas && "name" in data.lojas
+      ? (data.lojas as { name: string }).name
+      : null;
+  return { userId: data.id, lojaId: data.loja_id ?? null, lojaName };
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -20,7 +38,14 @@ export async function POST(request: Request) {
     if (hash) {
       const valid = await bcrypt.compare(password, hash);
       if (valid) {
-        return NextResponse.json({ ok: true, user: key });
+        const profile = await fetchUserProfile(key);
+        return NextResponse.json({
+          ok: true,
+          user: key,
+          userId: profile?.userId,
+          lojaId: profile?.lojaId ?? null,
+          lojaName: profile?.lojaName ?? null,
+        });
       }
       return NextResponse.json({ ok: false, error: "Usuário ou senha inválidos" }, { status: 401 });
     }
@@ -30,7 +55,7 @@ export async function POST(request: Request) {
     if (supabaseAdmin) {
       const { data: userRow, error } = await supabaseAdmin
         .from("users")
-        .select("username, password_hash")
+        .select("id, username, password_hash, loja_id, lojas(name)")
         .ilike("username", key)
         .maybeSingle();
 
@@ -42,7 +67,17 @@ export async function POST(request: Request) {
       if (userRow) {
         const valid = await bcrypt.compare(password, userRow.password_hash);
         if (valid) {
-          return NextResponse.json({ ok: true, user: userRow.username.toLowerCase() });
+          const lojaName =
+            userRow.loja_id && typeof userRow.lojas === "object" && userRow.lojas && "name" in userRow.lojas
+              ? (userRow.lojas as { name: string }).name
+              : null;
+          return NextResponse.json({
+            ok: true,
+            user: userRow.username.toLowerCase(),
+            userId: userRow.id,
+            lojaId: userRow.loja_id ?? null,
+            lojaName,
+          });
         }
       }
       return NextResponse.json({ ok: false, error: "Usuário ou senha inválidos" }, { status: 401 });
@@ -57,7 +92,14 @@ export async function POST(request: Request) {
       });
 
       if (!error && validUsername && typeof validUsername === "string") {
-        return NextResponse.json({ ok: true, user: validUsername.toLowerCase() });
+        const profile = await fetchUserProfile(validUsername);
+        return NextResponse.json({
+          ok: true,
+          user: validUsername.toLowerCase(),
+          userId: profile?.userId,
+          lojaId: profile?.lojaId ?? null,
+          lojaName: profile?.lojaName ?? null,
+        });
       }
     }
 

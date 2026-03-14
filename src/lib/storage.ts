@@ -31,14 +31,23 @@ function saveToLocalStorage(inventory: Inventory): void {
 }
 
 // --- Supabase ---
-export async function getInventories(): Promise<Inventory[]> {
+/**
+ * Lista inventários. Admin vê todos; usuários normais veem apenas da sua loja.
+ * @param lojaId - ID da loja do usuário (null = admin, vê todos)
+ * @param lojaUsername - Fallback para localStorage quando não há Supabase/userId
+ */
+export async function getInventories(
+  lojaId?: string | null,
+  lojaUsername?: string | null
+): Promise<Inventory[]> {
   const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { data, error } = await supabase
-        .from("inventories")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("inventories").select("*").order("created_at", { ascending: false });
+      if (lojaId != null && lojaId !== "") {
+        query = query.eq("loja_id", lojaId);
+      }
+      const { data, error } = await query;
       if (!error && data) {
         return data.map((row) => ({
           id: row.id,
@@ -46,6 +55,8 @@ export async function getInventories(): Promise<Inventory[]> {
           createdAt: row.created_at,
           items: row.items ?? [],
           status: row.status ?? "em_contagem",
+          lojaId: row.loja_id ?? undefined,
+          usuarioId: row.usuario_id ?? undefined,
         }));
       }
       if (error) console.error("[Supabase] getInventories:", error.message);
@@ -53,23 +64,29 @@ export async function getInventories(): Promise<Inventory[]> {
       console.error("[Supabase] getInventories error:", err);
     }
   }
-  return getFromLocalStorage().map((i) => withDefaultStatus(i as unknown as Record<string, unknown>));
+  let local = getFromLocalStorage().map((i) => withDefaultStatus(i as unknown as Record<string, unknown>));
+  if (lojaId != null && lojaId !== "") {
+    local = local.filter((i) => i.lojaId === lojaId);
+  } else if (lojaUsername != null && lojaUsername !== "") {
+    local = local.filter((i) => i.lojaUsername === lojaUsername);
+  }
+  return local;
 }
 
 export async function saveInventory(inventory: Inventory): Promise<void> {
   const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { error } = await supabase.from("inventories").upsert(
-        {
-          id: inventory.id,
-          name: inventory.name,
-          created_at: inventory.createdAt,
-          items: inventory.items,
-          status: inventory.status ?? "em_contagem",
-        },
-        { onConflict: "id" }
-      );
+      const payload: Record<string, unknown> = {
+        id: inventory.id,
+        name: inventory.name,
+        created_at: inventory.createdAt,
+        items: inventory.items,
+        status: inventory.status ?? "em_contagem",
+      };
+      if (inventory.lojaId != null) payload.loja_id = inventory.lojaId;
+      if (inventory.usuarioId != null) payload.usuario_id = inventory.usuarioId;
+      const { error } = await supabase.from("inventories").upsert(payload, { onConflict: "id" });
       if (!error) return;
       if (error) console.error("[Supabase] saveInventory:", error.message);
     } catch (err) {
@@ -95,6 +112,8 @@ export async function getInventory(id: string): Promise<Inventory | null> {
           createdAt: data.created_at,
           items: data.items ?? [],
           status: data.status ?? "em_contagem",
+          lojaId: data.loja_id ?? undefined,
+          usuarioId: data.usuario_id ?? undefined,
         };
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getInventory:", error.message);
@@ -121,11 +140,23 @@ export async function deleteInventory(id: string): Promise<void> {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(inventories));
 }
 
-export async function deleteAllInventories(): Promise<void> {
+/**
+ * @param lojaId - Se informado e não admin, deleta apenas inventários da loja.
+ * @param lojaUsername - Fallback para localStorage.
+ */
+export async function deleteAllInventories(
+  lojaId?: string | null,
+  lojaUsername?: string | null,
+  isAdmin?: boolean
+): Promise<void> {
   const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { data } = await supabase.from("inventories").select("id");
+      let query = supabase.from("inventories").select("id");
+      if (!isAdmin && lojaId != null && lojaId !== "") {
+        query = query.eq("loja_id", lojaId);
+      }
+      const { data } = await query;
       if (data && data.length > 0) {
         for (const row of data) {
           await supabase.from("inventories").delete().eq("id", row.id);
@@ -135,5 +166,13 @@ export async function deleteAllInventories(): Promise<void> {
       console.error("[Supabase] deleteAllInventories error:", err);
     }
   }
-  localStorage.setItem(STORAGE_KEY, "[]");
+  if (!isAdmin && lojaId != null && lojaId !== "") {
+    const local = getFromLocalStorage().filter((i) => i.lojaId !== lojaId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+  } else if (!isAdmin && lojaUsername != null && lojaUsername !== "") {
+    const local = getFromLocalStorage().filter((i) => i.lojaUsername !== lojaUsername);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+  } else {
+    localStorage.setItem(STORAGE_KEY, "[]");
+  }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { saveInventory } from "@/lib/storage";
+import { useAuth } from "@/components/AuthProvider";
 import type { Inventory } from "@/types/inventory";
 
 interface StartInventoryDrawerProps {
@@ -11,6 +12,7 @@ interface StartInventoryDrawerProps {
 }
 
 export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerProps) {
+  const { user, userId, lojaId } = useAuth();
   const [name, setName] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -55,6 +57,9 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
       createdAt: new Date().toISOString(),
       items: [],
       status: "em_contagem",
+      lojaId: lojaId ?? undefined,
+      usuarioId: userId ?? undefined,
+      lojaUsername: !userId ? (user ?? undefined) : undefined,
     };
 
     await saveInventory(inventory);
