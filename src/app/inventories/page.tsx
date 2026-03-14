@@ -6,6 +6,7 @@ import { Package, Trash2, Plus, Clock, Box, AlertTriangle } from "lucide-react";
 import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
+import { UserLojaHeader } from "@/components/UserLojaHeader";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
@@ -23,7 +24,7 @@ function formatDate(iso: string) {
 }
 
 export default function InventoriesPage() {
-  const { user, logout } = useAuth();
+  const { user, userId, lojaId, lojaName, isAdmin, logout } = useAuth();
   const [inventories, setInventories] = useState<Inventory[]>([]);
   const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
@@ -33,8 +34,10 @@ export default function InventoriesPage() {
   const [showStartDrawer, setShowStartDrawer] = useState(false);
 
   useEffect(() => {
-    getInventories().then(setInventories);
-  }, []);
+    const filterLojaId = isAdmin ? null : lojaId;
+    const lojaUsername = !lojaId && !isAdmin && user ? user : null;
+    getInventories(filterLojaId, lojaUsername).then(setInventories);
+  }, [user, userId, lojaId, isAdmin]);
 
   useEffect(() => {
     if (!statusEditId) return;
@@ -77,7 +80,9 @@ export default function InventoriesPage() {
   };
 
   const handleConfirmDeleteAll = async () => {
-    await deleteAllInventories();
+    const filterLojaId = isAdmin ? null : lojaId;
+    const lojaUsername = !lojaId && !isAdmin && user ? user : null;
+    await deleteAllInventories(filterLojaId, lojaUsername, isAdmin);
     setInventories([]);
   };
 
@@ -108,7 +113,8 @@ export default function InventoriesPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
-      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+      <UserLojaHeader showSairButton={false} />
+      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4 pr-14">
           <Link
             href="/"
@@ -119,9 +125,14 @@ export default function InventoriesPage() {
             </svg>
             Voltar
           </Link>
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold text-[var(--foreground)]">
-            Inventários
-          </h1>
+          <div className="absolute left-1/2 flex flex-col items-center -translate-x-1/2">
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">Inventários</h1>
+            {(lojaName || (isAdmin && !lojaName)) && (
+              <span className="text-xs text-[var(--muted)] mt-0.5">
+                {lojaName ? `Loja: ${lojaName}` : "Administrador"}
+              </span>
+            )}
+          </div>
           <div className="relative shrink-0">
             <button
               onClick={(e) => {

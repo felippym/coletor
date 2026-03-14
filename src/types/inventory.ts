@@ -11,4 +11,10 @@ export interface Inventory {
   createdAt: string;
   items: InventoryItem[];
   status: InventoryStatus;
+  /** ID da loja à qual o inventário pertence */
+  lojaId?: string | null;
+  /** ID do usuário que criou o inventário */
+  usuarioId?: string | null;
+  /** Fallback: username da loja para localStorage quando não há Supabase */
+  lojaUsername?: string | null;
 }
