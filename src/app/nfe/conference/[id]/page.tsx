@@ -3,11 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Clock, Package, FileText } from "lucide-react";
+import { Minus, Plus, Clock, Package, FileText, MessageSquare } from "lucide-react";
 import { getNFeConference, saveNFeConference } from "@/lib/nfe-storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
+import { SkeletonDetailPage } from "@/components/Skeleton";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
 
 function formatDate(iso: string) {
@@ -113,11 +114,7 @@ export default function NFeConferencePage() {
   }, [conference]);
 
   if (!conference) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-[var(--secondary)]">Carregando...</p>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   return (
@@ -323,6 +320,24 @@ export default function NFeConferencePage() {
                   })
                 )}
               </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-[var(--muted)] mb-2">
+                <MessageSquare className="h-4 w-4" />
+                Observação
+              </label>
+              <textarea
+                value={conference.observation ?? ""}
+                onChange={(e) => {
+                  const updated = { ...conference, observation: e.target.value.trim() || undefined };
+                  setConference(updated);
+                  void saveNFeConference(updated);
+                }}
+                placeholder="Adicione uma observação..."
+                rows={2}
+                className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none resize-none"
+              />
             </div>
 
             <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">

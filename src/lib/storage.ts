@@ -46,6 +46,7 @@ export async function getInventories(): Promise<Inventory[]> {
           createdAt: row.created_at,
           items: row.items ?? [],
           status: row.status ?? "em_contagem",
+          observation: row.observation ?? undefined,
         }));
       }
       if (error) console.error("[Supabase] getInventories:", error.message);
@@ -67,6 +68,7 @@ export async function saveInventory(inventory: Inventory): Promise<void> {
           created_at: inventory.createdAt,
           items: inventory.items,
           status: inventory.status ?? "em_contagem",
+          observation: inventory.observation ?? null,
         },
         { onConflict: "id" }
       );
@@ -95,6 +97,7 @@ export async function getInventory(id: string): Promise<Inventory | null> {
           createdAt: data.created_at,
           items: data.items ?? [],
           status: data.status ?? "em_contagem",
+          observation: data.observation ?? undefined,
         };
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getInventory:", error.message);

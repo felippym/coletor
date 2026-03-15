@@ -9,7 +9,8 @@ create table if not exists public.inventories (
   name text not null,
   created_at timestamptz not null default now(),
   items jsonb not null default '[]'::jsonb,
-  status text not null default 'em_contagem'
+  status text not null default 'em_contagem',
+  observation text
 );
 
 alter table public.inventories enable row level security;
@@ -49,7 +50,8 @@ create table if not exists public.nfe_conferences (
   supplier_name text not null default '',
   issue_date text not null default '',
   products jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  observation text
 );
 
 alter table public.nfe_conferences enable row level security;

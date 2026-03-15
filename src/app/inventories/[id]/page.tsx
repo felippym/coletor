@@ -3,11 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Trash2, Minus, Plus, Clock, Package, Box } from "lucide-react";
+import { Trash2, Minus, Plus, Clock, Package, Box, MessageSquare } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { shareTxt } from "@/lib/export";
 import { useAuth } from "@/components/AuthProvider";
+import { SkeletonDetailPage } from "@/components/Skeleton";
 import type { Inventory, InventoryItem, InventoryStatus } from "@/types/inventory";
 
 function formatDate(iso: string) {
@@ -186,11 +187,7 @@ export default function InventoryDetailsPage() {
   }, [inventory]);
 
   if (!inventory) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-[var(--secondary)]">Carregando...</p>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   const totalQty = inventory.items.reduce((s, i) => s + i.quantity, 0);
@@ -370,6 +367,24 @@ export default function InventoryDetailsPage() {
                 })
               )}
             </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-[var(--muted)] mb-2">
+              <MessageSquare className="h-4 w-4" />
+              Observação
+            </label>
+            <textarea
+              value={inventory.observation ?? ""}
+              onChange={(e) => {
+                const updated = { ...inventory, observation: e.target.value.trim() || undefined };
+                setInventory(updated);
+                void saveInventory(updated);
+              }}
+              placeholder="Adicione uma observação..."
+              rows={2}
+              className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none resize-none"
+            />
           </div>
 
           <div className="mt-6 flex flex-col gap-3">

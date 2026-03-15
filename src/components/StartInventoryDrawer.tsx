@@ -21,6 +21,7 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
     if (isOpen) {
       setIsClosing(false);
       setIsVisible(true);
+      setName("");
     } else {
       setIsVisible(false);
       setIsClosing(true);

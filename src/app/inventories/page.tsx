@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Trash2, Plus, Clock, Box, AlertTriangle } from "lucide-react";
+import { Package, Trash2, Plus, Clock, Box, AlertTriangle, MessageSquare } from "lucide-react";
 import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
+import { SkeletonCardList } from "@/components/Skeleton";
 import type { Inventory, InventoryStatus } from "@/types/inventory";
 
 function formatDate(iso: string) {
@@ -25,6 +26,7 @@ function formatDate(iso: string) {
 export default function InventoriesPage() {
   const { user, logout } = useAuth();
   const [inventories, setInventories] = useState<Inventory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
@@ -33,7 +35,10 @@ export default function InventoriesPage() {
   const [showStartDrawer, setShowStartDrawer] = useState(false);
 
   useEffect(() => {
-    getInventories().then(setInventories);
+    getInventories().then((data) => {
+      setInventories(data);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -189,7 +194,9 @@ export default function InventoriesPage() {
             </svg>
             Iniciar novo inventário
           </button>
-          {inventories.length === 0 ? (
+          {loading ? (
+            <SkeletonCardList count={4} />
+          ) : inventories.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center">
               <p className="text-[var(--secondary)]">
                 Nenhum inventário salvo. Inicie um novo na tela inicial.
@@ -240,6 +247,12 @@ export default function InventoriesPage() {
                               <Clock className="h-3.5 w-3.5" />
                               <span>{formattedDate}</span>
                             </div>
+                            {inv.observation && (
+                              <div className="mt-1 flex items-start gap-1.5 text-xs text-[var(--secondary)]">
+                                <MessageSquare className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                <span className="line-clamp-2">{inv.observation}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 

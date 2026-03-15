@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Clock, Package, ChevronRight } from "lucide-react";
+import { FileText, Clock, Package, ChevronRight, MessageSquare } from "lucide-react";
 import { getNFeConferences } from "@/lib/nfe-storage";
+import { SkeletonCardList } from "@/components/Skeleton";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
 
 type ConferenceStatus = "nao_iniciada" | "em_andamento" | "concluida";
@@ -95,9 +96,7 @@ export default function NFeConferencesPage() {
           </Link>
 
           {loading ? (
-            <div className="rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center">
-              <p className="text-[var(--secondary)]">Carregando conferências...</p>
-            </div>
+            <SkeletonCardList count={4} />
           ) : conferences.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center">
               <p className="text-[var(--secondary)]">
@@ -159,6 +158,12 @@ export default function NFeConferencesPage() {
                                 {totalCounted}/{totalExpected} itens contados
                               </span>
                             </div>
+                            {conf.observation && (
+                              <div className="mt-1 flex items-start gap-1.5 text-xs text-[var(--secondary)]">
+                                <MessageSquare className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                <span className="line-clamp-2">{conf.observation}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">

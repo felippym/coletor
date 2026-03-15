@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Clock, Package, Box } from "lucide-react";
+import { Minus, Plus, Clock, Package, Box, MessageSquare } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
 import type { InventoryStatus } from "@/types/inventory";
 
@@ -36,6 +36,7 @@ import { getProdutoByCodigo, getProdutosByCodigos } from "@/lib/produtos";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
+import { SkeletonDetailPage } from "@/components/Skeleton";
 import type { Inventory, InventoryItem } from "@/types/inventory";
 
 export default function InventoryScanPage() {
@@ -227,11 +228,7 @@ export default function InventoryScanPage() {
   }, [barcodeInput]);
 
   if (!inventory) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-[var(--secondary)]">Carregando...</p>
-      </div>
-    );
+    return <SkeletonDetailPage />;
   }
 
   return (
@@ -466,6 +463,24 @@ export default function InventoryScanPage() {
                 })
               )}
             </div>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-[var(--muted)] mb-2">
+              <MessageSquare className="h-4 w-4" />
+              Observação
+            </label>
+            <textarea
+              value={inventory.observation ?? ""}
+              onChange={(e) => {
+                const updated = { ...inventory, observation: e.target.value.trim() || undefined };
+                setInventory(updated);
+                void saveInventory(updated);
+              }}
+              placeholder="Adicione uma observação..."
+              rows={2}
+              className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none resize-none"
+            />
           </div>
 
           <button

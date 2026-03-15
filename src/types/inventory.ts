@@ -11,4 +11,5 @@ export interface Inventory {
   createdAt: string;
   items: InventoryItem[];
   status: InventoryStatus;
+  observation?: string;
 }

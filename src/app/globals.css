@@ -54,6 +54,9 @@
   :root {
     --transition: 0ms;
   }
+  .animate-skeleton-pulse {
+    animation: none;
+  }
 }
 
 @theme inline {
@@ -104,4 +107,18 @@ button:disabled, [aria-disabled="true"] {
 .min-h-dvh {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+/* Skeleton pulse animation */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
