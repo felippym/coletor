@@ -240,19 +240,18 @@ export default function InventoriesPage() {
                             <Package className="h-5 w-5 text-[var(--muted)]" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-[var(--foreground)] text-base tracking-tight">
-                              {inv.name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-[var(--foreground)] text-base tracking-tight">
+                                {inv.name}
+                              </h3>
+                              {inv.observation && (
+                                <MessageSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" aria-label="Tem observação" />
+                              )}
+                            </div>
                             <div className="flex items-center gap-1.5 mt-0.5 text-sm text-[var(--muted)]">
                               <Clock className="h-3.5 w-3.5" />
                               <span>{formattedDate}</span>
                             </div>
-                            {inv.observation && (
-                              <div className="mt-1 flex items-start gap-1.5 text-xs text-[var(--secondary)]">
-                                <MessageSquare className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                                <span className="line-clamp-2">{inv.observation}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
 
@@ -266,8 +265,9 @@ export default function InventoriesPage() {
                       </div>
 
                       {/* Bottom row */}
-                      <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]/50">
-                        <div className="flex items-center gap-4 text-sm">
+                      <div className="pt-3 border-t border-[var(--border)]/50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-sm">
                           <div className="flex items-center gap-1.5 text-[var(--muted)]">
                             <Box className="h-3.5 w-3.5" />
                             <span>
@@ -295,14 +295,15 @@ export default function InventoriesPage() {
                               </span>
                             )}
                           </>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteClick(e, inv)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
+                            aria-label="Excluir inventário"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, inv)}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
-                          aria-label="Excluir inventário"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </div>
                     </Link>
 

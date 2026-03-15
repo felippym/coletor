@@ -53,6 +53,13 @@ export default function InventoryScanPage() {
   const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
   const [typingProdutoHint, setTypingProdutoHint] = useState<string | null>(null);
   const [expandedCodesKey, setExpandedCodesKey] = useState<string | null>(null);
+  const [ending, setEnding] = useState(false);
+  const inventoryRef = useRef<Inventory | null>(null);
+  const focusedForId = useRef<string | null>(null);
+
+  useEffect(() => {
+    inventoryRef.current = inventory;
+  }, [inventory]);
 
   useEffect(() => {
     getInventory(id).then(setInventory);
@@ -193,18 +200,26 @@ export default function InventoryScanPage() {
   );
 
   const handleEndInventory = useCallback(async () => {
-    if (inventory) {
-      const updated = { ...inventory, status: "finalizado" as const };
+    const current = inventoryRef.current;
+    if (!current || ending) return;
+    setEnding(true);
+    try {
+      const updated = { ...current, status: "finalizado" as const };
       await saveInventory(updated);
       router.push("/inventories");
+    } catch (err) {
+      console.error("[handleEndInventory]", err);
+      setEnding(false);
     }
-  }, [inventory, router]);
+  }, [router, ending]);
 
   useEffect(() => {
-    if (inventory) {
-      barcodeInputRef.current?.focus();
+    if (inventory && focusedForId.current !== inventory.id) {
+      focusedForId.current = inventory.id;
+      const t = setTimeout(() => barcodeInputRef.current?.focus(), 100);
+      return () => clearTimeout(t);
     }
-  }, [inventory]);
+  }, [inventory?.id]);
 
   // Carrega nomes dos produtos da tabela public.produtos
   useEffect(() => {
@@ -473,21 +488,23 @@ export default function InventoryScanPage() {
             <textarea
               value={inventory.observation ?? ""}
               onChange={(e) => {
-                const updated = { ...inventory, observation: e.target.value.trim() || undefined };
+                const val = e.target.value;
+                const updated = { ...inventory, observation: val.trim() ? val : undefined };
                 setInventory(updated);
                 void saveInventory(updated);
               }}
               placeholder="Adicione uma observação..."
               rows={2}
-              className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none resize-none"
+              className="scrollbar-thin w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none resize-none"
             />
           </div>
 
           <button
             onClick={handleEndInventory}
-            className="flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)]"
+            disabled={ending}
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)] disabled:opacity-70 disabled:pointer-events-none"
           >
-            Encerrar Inventário
+            {ending ? "Salvando..." : "Encerrar Inventário"}
           </button>
           </div>
         </div>

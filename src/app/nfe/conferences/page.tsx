@@ -139,9 +139,14 @@ export default function NFeConferencesPage() {
                             <FileText className="h-5 w-5 text-[var(--muted)]" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="truncate font-semibold text-[var(--foreground)]">
-                              {conf.supplierName}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="truncate font-semibold text-[var(--foreground)]">
+                                {conf.supplierName}
+                              </h3>
+                              {conf.observation && (
+                                <MessageSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" aria-label="Tem observação" />
+                              )}
+                            </div>
                             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-[var(--muted)]">
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
@@ -158,12 +163,6 @@ export default function NFeConferencesPage() {
                                 {totalCounted}/{totalExpected} itens contados
                               </span>
                             </div>
-                            {conf.observation && (
-                              <div className="mt-1 flex items-start gap-1.5 text-xs text-[var(--secondary)]">
-                                <MessageSquare className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                                <span className="line-clamp-2">{conf.observation}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">

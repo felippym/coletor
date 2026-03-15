@@ -31,7 +31,19 @@ function saveToLocalStorage(inventory: Inventory): void {
 }
 
 // --- Supabase ---
+function rowToInventory(row: Record<string, unknown>): Inventory {
+  return withDefaultStatus({
+    id: row.id,
+    name: row.name,
+    createdAt: row.created_at,
+    items: row.items ?? [],
+    status: row.status ?? "em_contagem",
+    observation: row.observation ?? undefined,
+  } as Record<string, unknown>);
+}
+
 export async function getInventories(): Promise<Inventory[]> {
+  const local = getFromLocalStorage().map((i) => withDefaultStatus(i as unknown as Record<string, unknown>));
   const supabase = getSupabase();
   if (isSupabaseConfigured() && supabase) {
     try {
@@ -39,22 +51,22 @@ export async function getInventories(): Promise<Inventory[]> {
         .from("inventories")
         .select("*")
         .order("created_at", { ascending: false });
-      if (!error && data) {
-        return data.map((row) => ({
-          id: row.id,
-          name: row.name,
-          createdAt: row.created_at,
-          items: row.items ?? [],
-          status: row.status ?? "em_contagem",
-          observation: row.observation ?? undefined,
-        }));
+      if (!error && data && data.length > 0) {
+        const fromSupabase = data.map((row) => rowToInventory(row as Record<string, unknown>));
+        const byId = new Map<string, Inventory>();
+        for (const inv of [...local, ...fromSupabase]) {
+          byId.set(inv.id, inv);
+        }
+        return Array.from(byId.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       }
       if (error) console.error("[Supabase] getInventories:", error.message);
     } catch (err) {
       console.error("[Supabase] getInventories error:", err);
     }
   }
-  return getFromLocalStorage().map((i) => withDefaultStatus(i as unknown as Record<string, unknown>));
+  return local;
 }
 
 export async function saveInventory(inventory: Inventory): Promise<void> {
@@ -72,7 +84,6 @@ export async function saveInventory(inventory: Inventory): Promise<void> {
         },
         { onConflict: "id" }
       );
-      if (!error) return;
       if (error) console.error("[Supabase] saveInventory:", error.message);
     } catch (err) {
       console.error("[Supabase] saveInventory error:", err);
