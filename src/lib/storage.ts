@@ -125,7 +125,6 @@ export async function deleteInventory(id: string): Promise<void> {
   if (isSupabaseConfigured() && supabase) {
     try {
       const { error } = await supabase.from("inventories").delete().eq("id", id);
-      if (!error) return;
       if (error) console.error("[Supabase] deleteInventory:", error.message);
     } catch (err) {
       console.error("[Supabase] deleteInventory error:", err);
