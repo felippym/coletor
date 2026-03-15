@@ -8,14 +8,22 @@ interface ScanConfirmationProps {
   ean: string;
   quantity: number;
   onComplete: () => void;
+  /** Nome do produto (ex: da NFe) - evita consulta ao catálogo */
+  productName?: string | null;
 }
 
-export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmationProps) {
+export function ScanConfirmation({ ean, quantity, onComplete, productName: productNameProp }: ScanConfirmationProps) {
   const [visible, setVisible] = useState(true);
-  const [produtoNome, setProdutoNome] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [produtoNome, setProdutoNome] = useState<string | null>(productNameProp ?? null);
+  const [loaded, setLoaded] = useState(!!productNameProp);
 
   useEffect(() => {
+    if (productNameProp != null) {
+      setProdutoNome(productNameProp);
+      setLoaded(true);
+      playScanSound();
+      return;
+    }
     getProdutoByCodigo(ean).then((p) => {
       const nome = p?.produto ?? null;
       setProdutoNome(nome);
@@ -26,7 +34,7 @@ export function ScanConfirmation({ ean, quantity, onComplete }: ScanConfirmation
         playScanErrorSound();
       }
     });
-  }, [ean]);
+  }, [ean, productNameProp]);
 
   useEffect(() => {
     if (!loaded) return;

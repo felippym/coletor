@@ -11,7 +11,8 @@
     "db:migrate": "node scripts/run-migration-status.js",
     "db:migrate:open": "node scripts/open-sql-editor.js",
     "seed:produtos": "node scripts/seed-produtos.js",
-    "auth:env": "node scripts/print-auth-hashes-env.js"
+    "auth:env": "node scripts/print-auth-hashes-env.js",
+    "nfe:cert": "node scripts/nfe-cert-to-base64.js"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.15",
@@ -19,6 +20,7 @@
     "@supabase/supabase-js": "^2.99.0",
     "@zxing/browser": "^0.1.5",
     "bcryptjs": "^3.0.3",
+    "fast-xml-parser": "^5.5.5",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "pg": "^8.20.0",

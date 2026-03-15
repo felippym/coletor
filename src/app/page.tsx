@@ -36,6 +36,22 @@ export default function Home() {
             >
               Iniciar Inventário
             </button>
+            {user === "admin" && (
+              <>
+                <Link
+                  href="/nfe"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] px-6 py-3 font-semibold text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)] sm:h-14"
+                >
+                  Conferir NFe
+                </Link>
+                <Link
+                  href="/nfe/conferences"
+                  className="flex h-12 w-full items-center justify-center rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] px-6 py-3 font-semibold text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)] sm:h-14"
+                >
+                  Ver Conferências
+                </Link>
+              </>
+            )}
             <Link
               href="/inventories"
               className="flex h-12 w-full items-center justify-center rounded-2xl border-2 border-[var(--border)] bg-[var(--surface)] px-6 py-3 font-semibold text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--background)] sm:h-14"
