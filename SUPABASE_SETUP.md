@@ -94,9 +94,23 @@ Após executar as migrations e configurar o `.env.local`, reinicie o `npm run de
 - **Inventários:** Table Editor → **inventories** — os dados aparecem após criar um inventário no app
 - **Usuários:** Table Editor → **users** — os usuários cadastrados aparecem após rodar o script
 
+## Produção (Vercel)
+
+Na Vercel, adicione as mesmas variáveis em **Project** → **Settings** → **Environment Variables**:
+
+| Variável | Valor | Ambiente |
+|----------|-------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://jkgrxdscxznnbsodllmd.supabase.co` | Production, Preview |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | (chave anon do Supabase) | Production, Preview |
+| `SUPABASE_SERVICE_ROLE_KEY` | (chave service_role do Supabase) | Production, Preview |
+
+**Importante:** Sem `SUPABASE_SERVICE_ROLE_KEY` em produção, a página de Usuários mostra "Supabase não configurado" e o login não usa o banco.
+
+Depois de adicionar, faça um novo deploy (ou **Redeploy** no último deployment).
+
 ## Fallback (auth-hashes.json)
 
-Se `SUPABASE_SERVICE_ROLE_KEY` não estiver configurado, o login continua usando `auth-hashes.json` (legado).
+Se `SUPABASE_SERVICE_ROLE_KEY` não estiver configurado, o login continua usando `auth-hashes.json` (legado). Em produção, use `AUTH_HASHES_B64` no lugar do arquivo.
 
 ## Debug
 
