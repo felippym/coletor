@@ -62,7 +62,7 @@ export default function Home() {
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-[calc(4rem+env(safe-area-inset-top))] pb-2">
         {/* Seção perfil / logo */}
         <div className="mb-6 flex flex-col items-center gap-4">
-          <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--border)] bg-[var(--surface)] p-3">
+          <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--primary)] bg-[var(--surface)] p-3">
             <img
               src="/logo.png"
               alt="Cutelaria do ISAÍAS"
