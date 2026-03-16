@@ -14,18 +14,7 @@ export async function POST(request: Request) {
 
     const key = username.toLowerCase().trim();
 
-    // 1. auth-hashes.json (bcrypt nativo - compatível com hashes $2b$ do Node)
-    const hashes = getAuthHashes();
-    const hash = hashes[key];
-    if (hash) {
-      const valid = await bcrypt.compare(password, hash);
-      if (valid) {
-        return NextResponse.json({ ok: true, user: key });
-      }
-      return NextResponse.json({ ok: false, error: "Usuário ou senha inválidos" }, { status: 401 });
-    }
-
-    // 2. Supabase com service_role (query direta na tabela users)
+    // 1. Supabase com service_role (prioridade: senhas alteradas na tela de usuários)
     const supabaseAdmin = getSupabaseServer();
     if (supabaseAdmin) {
       const { data: userRow, error } = await supabaseAdmin
@@ -44,6 +33,17 @@ export async function POST(request: Request) {
         if (valid) {
           return NextResponse.json({ ok: true, user: userRow.username.toLowerCase() });
         }
+        return NextResponse.json({ ok: false, error: "Usuário ou senha inválidos" }, { status: 401 });
+      }
+    }
+
+    // 2. auth-hashes.json (fallback quando usuário não está no Supabase)
+    const hashes = getAuthHashes();
+    const hash = hashes[key];
+    if (hash) {
+      const valid = await bcrypt.compare(password, hash);
+      if (valid) {
+        return NextResponse.json({ ok: true, user: key });
       }
       return NextResponse.json({ ok: false, error: "Usuário ou senha inválidos" }, { status: 401 });
     }
