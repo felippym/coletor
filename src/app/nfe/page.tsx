@@ -8,6 +8,7 @@ import {
   createNFeConferenceFromInvoice,
   saveNFeConference,
 } from "@/lib/nfe-storage";
+import { StartConferenceDrawer } from "@/components/StartConferenceDrawer";
 import type { NFeInvoice } from "@/types/nfe";
 
 export default function NFeImportPage() {
@@ -17,12 +18,13 @@ export default function NFeImportPage() {
   const [xml, setXml] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDrawer, setShowDrawer] = useState(false);
 
   const chaveDigits = chave.replace(/\D/g, "");
   const isValidChave = chaveDigits.length === 44;
   const hasXml = xml.trim().length > 100;
 
-  const handleConsult = async () => {
+  const handleConsult = async (employeeName: string) => {
     setError(null);
     setLoading(true);
 
@@ -41,18 +43,20 @@ export default function NFeImportPage() {
       const data = (await res.json()) as NFeInvoice | { error?: string };
 
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Erro ao consultar NFe");
-        return;
+        const errMsg = (data as { error?: string }).error ?? "Erro ao consultar NFe";
+        setError(errMsg);
+        setLoading(false);
+        throw new Error(errMsg);
       }
 
       const invoice = data as NFeInvoice;
-      const conference = createNFeConferenceFromInvoice(invoice);
+      const conference = createNFeConferenceFromInvoice(invoice, employeeName);
       await saveNFeConference(conference);
       router.push(`/nfe/conference/${conference.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar");
-    } finally {
       setLoading(false);
+      throw err;
     }
   };
 
@@ -184,21 +188,21 @@ export default function NFeImportPage() {
           )}
 
           <button
-            onClick={handleConsult}
+            onClick={() => setShowDrawer(true)}
             disabled={!canSubmit || loading}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
           >
-            {loading ? (
-              <>
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--primary-foreground)] border-t-transparent" />
-                Consultando...
-              </>
-            ) : (
-              "Consultar e Conferir"
-            )}
+            Consultar e Conferir
           </button>
         </div>
       </main>
+
+      <StartConferenceDrawer
+        isOpen={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        onConfirm={handleConsult}
+        isLoading={loading}
+      />
     </div>
   );
 }

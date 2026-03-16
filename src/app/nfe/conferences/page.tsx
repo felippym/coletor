@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Clock, Package, MessageSquare, Trash2 } from "lucide-react";
+import { FileText, Clock, Package, MessageSquare, Trash2, User } from "lucide-react";
 import { getNFeConferences, deleteNFeConference } from "@/lib/nfe-storage";
+import { useAuth } from "@/components/AuthProvider";
 import { SkeletonCardList } from "@/components/Skeleton";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
@@ -56,6 +57,7 @@ const statusConfig: Record<ConferenceStatus, { className: string }> = {
 };
 
 export default function NFeConferencesPage() {
+  const { user } = useAuth();
   const [conferences, setConferences] = useState<NFeConference[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<NFeConference | null>(null);
@@ -185,7 +187,7 @@ export default function NFeConferencesPage() {
                         {/* Bottom row */}
                         <div className="pt-3 border-t border-[var(--border)]/50">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-sm">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                               <div className="flex items-center gap-1.5 text-[var(--muted)]">
                                 <Package className="h-3.5 w-3.5" />
                                 <span>
@@ -196,14 +198,25 @@ export default function NFeConferencesPage() {
                               <span className="text-[var(--muted)]">
                                 <span className="font-medium text-[var(--foreground)]">{totalCounted}</span>/{totalExpected} itens contados
                               </span>
+                              {conf.startedBy && (
+                                <>
+                                  <span className="text-[var(--border)]">•</span>
+                                  <span className="flex items-center gap-1.5 text-[var(--muted)]">
+                                    <User className="h-3.5 w-3.5" />
+                                    <span className="font-medium text-[var(--foreground)]">{conf.startedBy}</span>
+                                  </span>
+                                </>
+                              )}
                             </div>
-                            <button
-                              onClick={(e) => handleDeleteClick(e, conf)}
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
-                              aria-label="Excluir conferência"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {user === "admin" && (
+                              <button
+                                onClick={(e) => handleDeleteClick(e, conf)}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
+                                aria-label="Excluir conferência"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </Link>

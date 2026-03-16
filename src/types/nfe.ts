@@ -18,4 +18,5 @@ export interface NFeConference extends NFeInvoice {
   id: string;
   createdAt: string;
   observation?: string;
+  startedBy?: string;
 }

@@ -42,6 +42,7 @@ export async function getNFeConferences(): Promise<NFeConference[]> {
           products: (row.products ?? []) as NFeProduct[],
           createdAt: row.created_at ?? "",
           observation: row.observation ?? undefined,
+          startedBy: row.started_by ?? undefined,
         }));
       }
       if (error) console.error("[Supabase] getNFeConferences:", error.message);
@@ -66,6 +67,7 @@ export async function saveNFeConference(conference: NFeConference): Promise<void
           products: conference.products,
           created_at: conference.createdAt,
           observation: conference.observation ?? null,
+          started_by: conference.startedBy ?? null,
         },
         { onConflict: "id" }
       );
@@ -97,6 +99,7 @@ export async function getNFeConference(id: string): Promise<NFeConference | null
           products: (data.products ?? []) as NFeProduct[],
           createdAt: data.created_at ?? "",
           observation: data.observation ?? undefined,
+          startedBy: data.started_by ?? undefined,
         };
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getNFeConference:", error.message);
@@ -124,10 +127,14 @@ export async function deleteNFeConference(id: string): Promise<void> {
   }
 }
 
-export function createNFeConferenceFromInvoice(invoice: NFeInvoice): NFeConference {
+export function createNFeConferenceFromInvoice(
+  invoice: NFeInvoice,
+  startedBy?: string
+): NFeConference {
   return {
     ...invoice,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
+    startedBy,
   };
 }
