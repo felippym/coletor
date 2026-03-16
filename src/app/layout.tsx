@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { TopRightActions } from "@/components/TopRightActions";
 import { AuthProvider } from "@/components/AuthProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -68,9 +68,11 @@ export default function RootLayout({
             __html: `(function(){var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")})();`,
           }}
         />
-        <ThemeSwitch />
         <TooltipProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <TopRightActions />
+            {children}
+          </AuthProvider>
         </TooltipProvider>
       </body>
     </html>
