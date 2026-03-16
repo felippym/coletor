@@ -3,11 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Clock, Package, FileText, MessageSquare } from "lucide-react";
+import { Minus, Clock, Package, FileText, MessageSquare, Copy, AlertTriangle, CheckCircle } from "lucide-react";
 import { getNFeConference, saveNFeConference } from "@/lib/nfe-storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
+import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { SkeletonDetailPage } from "@/components/Skeleton";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
 
@@ -34,6 +35,8 @@ export default function NFeConferencePage() {
   const [conference, setConference] = useState<NFeConference | null>(null);
   const [search, setSearch] = useState("");
   const [confirmScan, setConfirmScan] = useState<{ ean: string; quantity: number } | null>(null);
+  const [decreaseTarget, setDecreaseTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
+  const [showFinishModal, setShowFinishModal] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
 
@@ -103,8 +106,18 @@ export default function NFeConferencePage() {
     [conference]
   );
 
+  const divergences = useMemo(() => {
+    if (!conference) return [];
+    return conference.products.filter((p) => p.countedQty !== p.expectedQty);
+  }, [conference]);
+
   const handleFinish = useCallback(() => {
-    router.push("/");
+    setShowFinishModal(true);
+  }, []);
+
+  const handleCloseFinishModal = useCallback(() => {
+    setShowFinishModal(false);
+    router.push("/nfe/conferences");
   }, [router]);
 
   useEffect(() => {
@@ -244,12 +257,6 @@ export default function NFeConferencePage() {
             )}
 
             <div className="overflow-hidden rounded-xl border border-[var(--border)]/60 bg-[var(--surface)] transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg">
-              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 border-b border-[var(--border)]/50 bg-[var(--surface-hover)] px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                <div>Produto</div>
-                <div className="w-14 text-right">Esp.</div>
-                <div className="w-14 text-right">Cont.</div>
-                <div className="w-20 text-right">+/-</div>
-              </div>
               <div className="max-h-[40vh] min-h-[120px] overflow-y-auto overscroll-contain">
                 {filteredProducts.length === 0 ? (
                   <div className="px-4 py-8 text-center text-[var(--secondary)]">
@@ -258,62 +265,57 @@ export default function NFeConferencePage() {
                 ) : (
                   filteredProducts.map(({ product, originalIndex }) => {
                     const diff = product.countedQty - product.expectedQty;
+                    const diffBgClass =
+                      diff < 0 ? "bg-[var(--destructive)]/5" : diff > 0 ? "bg-[var(--accent)]/10" : "bg-[var(--success)]/5";
                     const diffClass =
-                      diff > 0
+                      diff === 0
                         ? "text-[var(--success)]"
-                        : diff < 0
-                          ? "text-[var(--destructive)]"
-                          : "text-[var(--muted)]";
+                        : diff > 0
+                          ? "text-[var(--accent)]"
+                          : "text-[var(--destructive)]";
                     return (
                       <div
                         key={`${product.ean}-${originalIndex}`}
-                        className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 border-b border-[var(--border)]/50 px-4 py-3 last:border-0"
+                        className={`border-b border-[var(--border)]/50 px-4 py-4 last:border-0 ${diffBgClass}`}
                       >
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-[var(--foreground)]">
-                            {product.description}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium leading-snug text-[var(--foreground)]">
+                              {product.description}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => navigator.clipboard.writeText(product.ean)}
+                              className="mt-1 flex items-center gap-1.5 font-mono text-xs text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                              title="Copiar EAN"
+                            >
+                              {product.ean}
+                              <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+                            </button>
                           </div>
-                          <div className="mt-0.5 font-mono text-xs text-[var(--muted)]">
-                            {product.ean}
-                          </div>
-                        </div>
-                        <div className="text-right text-sm font-medium text-[var(--foreground)]">
-                          {product.expectedQty}
-                        </div>
-                        <div className="text-right text-sm font-medium text-[var(--foreground)]">
-                          {product.countedQty}
-                        </div>
-                        <div className="flex items-center justify-end gap-0.5">
                           <button
                             type="button"
                             onClick={() =>
-                              updateProduct(originalIndex, {
-                                countedQty: Math.max(0, product.countedQty - 1),
-                              })
+                              product.countedQty > 0 &&
+                              setDecreaseTarget({ originalIndex, product })
                             }
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
                             disabled={product.countedQty <= 0}
-                            aria-label="Diminuir"
+                            aria-label="Diminuir quantidade"
                           >
                             <Minus className="h-4 w-4" />
                           </button>
-                          <span
-                            className={`min-w-[2rem] text-center text-sm font-medium ${diffClass}`}
-                          >
-                            {diff > 0 ? `+${diff}` : diff}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                          <span className="text-[var(--muted)]">
+                            Esperado: <strong className="font-semibold text-[var(--foreground)]">{product.expectedQty}</strong>
                           </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateProduct(originalIndex, {
-                                countedQty: product.countedQty + 1,
-                              })
-                            }
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]"
-                            aria-label="Aumentar"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
+                          <span className="text-[var(--muted)]">
+                            Conferido: <strong className="font-semibold text-[var(--foreground)]">{product.countedQty}</strong>
+                          </span>
+                          <span className={diffClass}>
+                            Diferença: <strong>{diff > 0 ? `+${diff}` : diff}</strong>
+                          </span>
                         </div>
                       </div>
                     );
@@ -364,6 +366,93 @@ export default function NFeConferencePage() {
           onComplete={() => setConfirmScan(null)}
           productName={conference.products.find((p) => p.ean === confirmScan.ean)?.description}
         />
+      )}
+
+      <ConfirmDeleteDrawer
+        isOpen={!!decreaseTarget}
+        onClose={() => setDecreaseTarget(null)}
+        onConfirm={() => {
+          if (decreaseTarget) {
+            updateProduct(decreaseTarget.originalIndex, {
+              countedQty: Math.max(0, decreaseTarget.product.countedQty - 1),
+            });
+          }
+        }}
+        title="Remover 1 unidade?"
+        message={
+          decreaseTarget
+            ? `"${decreaseTarget.product.description}" — Confirma a remoção desta unidade da conferência?`
+            : undefined
+        }
+        confirmLabel="Remover"
+        loadingLabel="Removendo..."
+      />
+
+      {showFinishModal && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div
+            onClick={handleCloseFinishModal}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <div className="relative max-h-[85vh] overflow-hidden rounded-t-3xl border-t-2 border-x-2 border-[var(--border)] bg-[var(--surface)] p-6 pb-8 shadow-2xl">
+            <div className="absolute left-1/2 top-3 h-1 w-12 -translate-x-1/2 rounded-full bg-[var(--muted)]" />
+            <div className="mt-4 flex items-center gap-2">
+              {divergences.length > 0 ? (
+                <AlertTriangle className="h-6 w-6 shrink-0 text-[var(--destructive)]" />
+              ) : (
+                <CheckCircle className="h-6 w-6 shrink-0 text-[var(--success)]" />
+              )}
+              <h2 className="text-xl font-semibold text-[var(--foreground)]">
+                {divergences.length > 0 ? "Divergências na conferência" : "Conferência concluída"}
+              </h2>
+            </div>
+            <p className="mt-2 text-sm text-[var(--secondary)]">
+              {divergences.length > 0
+                ? `${divergences.length} produto(s) com diferença entre esperado e conferido:`
+                : "Todos os produtos foram conferidos corretamente."}
+            </p>
+            {divergences.length > 0 && (
+              <div className="mt-4 max-h-[50vh] overflow-y-auto space-y-3">
+                {divergences.map((p, idx) => {
+                  const diff = p.countedQty - p.expectedQty;
+                  const diffClass = diff > 0 ? "text-[var(--accent)]" : "text-[var(--destructive)]";
+                  return (
+                    <div
+                      key={`${p.ean}-${idx}`}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--surface-hover)] p-3"
+                    >
+                      <p className="text-sm font-medium text-[var(--foreground)]">{p.description}</p>
+                      <p className="mt-0.5 font-mono text-xs text-[var(--muted)]">{p.ean}</p>
+                      <p className="mt-2 text-sm">
+                        <span className="text-[var(--muted)]">Esperado: {p.expectedQty}</span>
+                        {" · "}
+                        <span className="text-[var(--muted)]">Conferido: {p.countedQty}</span>
+                        {" · "}
+                        <span className={diffClass}>
+                          Diferença: {diff > 0 ? `+${diff}` : diff}
+                        </span>
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowFinishModal(false)}
+                className="flex-1 flex h-14 items-center justify-center rounded-2xl border-2 border-[var(--border)] font-semibold text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.98]"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleCloseFinishModal}
+                className="flex-1 flex h-14 items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98]"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

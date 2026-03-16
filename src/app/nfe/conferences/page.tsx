@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Clock, Package, ChevronRight, MessageSquare } from "lucide-react";
-import { getNFeConferences } from "@/lib/nfe-storage";
+import { FileText, Clock, Package, MessageSquare, Trash2 } from "lucide-react";
+import { getNFeConferences, deleteNFeConference } from "@/lib/nfe-storage";
 import { SkeletonCardList } from "@/components/Skeleton";
+import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
 
 type ConferenceStatus = "nao_iniciada" | "em_andamento" | "concluida";
@@ -57,6 +58,7 @@ const statusConfig: Record<ConferenceStatus, { className: string }> = {
 export default function NFeConferencesPage() {
   const [conferences, setConferences] = useState<NFeConference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<NFeConference | null>(null);
 
   useEffect(() => {
     getNFeConferences().then((data) => {
@@ -64,6 +66,19 @@ export default function NFeConferencesPage() {
       setLoading(false);
     });
   }, []);
+
+  const handleDeleteClick = (e: React.MouseEvent, conf: NFeConference) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteTarget(conf);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteNFeConference(deleteTarget.id);
+    setConferences((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+    setDeleteTarget(null);
+  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
@@ -126,61 +141,93 @@ export default function NFeConferencesPage() {
                     (s, p) => s + p.countedQty,
                     0
                   );
+                  const formattedDate = formatDate(conf.createdAt);
 
                   return (
-                    <Link
+                    <div
                       key={conf.id}
-                      href={`/nfe/conference/${conf.id}`}
-                      className="block rounded-xl border border-[var(--border)]/60 bg-[var(--surface)] p-5 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
+                      className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-5 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex min-w-0 flex-1 items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-hover)]">
-                            <FileText className="h-5 w-5 text-[var(--muted)]" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="truncate font-semibold text-[var(--foreground)]">
-                                {conf.supplierName}
-                              </h3>
-                              {conf.observation && (
-                                <MessageSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" aria-label="Tem observação" />
-                              )}
+                      <Link
+                        href={`/nfe/conference/${conf.id}`}
+                        className="block -m-5 p-5 pr-10"
+                      >
+                        {/* Top row */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-hover)]">
+                              <FileText className="h-5 w-5 text-[var(--muted)]" />
                             </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-[var(--muted)]">
-                              <span className="flex items-center gap-1">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-[var(--foreground)] text-base tracking-tight">
+                                  {conf.supplierName}
+                                </h3>
+                                {conf.observation && (
+                                  <MessageSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" aria-label="Tem observação" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-sm text-[var(--muted)]">
                                 <Clock className="h-3.5 w-3.5" />
-                                {formatDate(conf.createdAt)}
-                              </span>
-                              <span>Nº {conf.invoiceNumber}</span>
-                            </div>
-                            <div className="mt-2 flex items-center gap-4 text-xs text-[var(--secondary)]">
-                              <span className="flex items-center gap-1">
-                                <Package className="h-3.5 w-3.5" />
-                                {conf.products.length} produtos
-                              </span>
-                              <span>
-                                {totalCounted}/{totalExpected} itens contados
-                              </span>
+                                <span>{formattedDate}</span>
+                                <span className="text-[var(--border)]">•</span>
+                                <span>Nº {conf.invoiceNumber}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
                           <span
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusClass}`}
+                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium shrink-0 ${statusClass}`}
                           >
                             {statusLabel[status]}
                           </span>
-                          <ChevronRight className="h-5 w-5 text-[var(--muted)]" />
                         </div>
-                      </div>
-                    </Link>
+
+                        {/* Bottom row */}
+                        <div className="pt-3 border-t border-[var(--border)]/50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-1.5 text-[var(--muted)]">
+                                <Package className="h-3.5 w-3.5" />
+                                <span>
+                                  <span className="font-medium text-[var(--foreground)]">{conf.products.length}</span> produtos
+                                </span>
+                              </div>
+                              <span className="text-[var(--border)]">•</span>
+                              <span className="text-[var(--muted)]">
+                                <span className="font-medium text-[var(--foreground)]">{totalCounted}</span>/{totalExpected} itens contados
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, conf)}
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
+                              aria-label="Excluir conferência"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
                   );
                 })}
             </div>
           )}
         </div>
       </main>
+
+      <ConfirmDeleteDrawer
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir conferência?"
+        message={
+          deleteTarget
+            ? `Excluir a conferência "${deleteTarget.supplierName}" (Nº ${deleteTarget.invoiceNumber})? Esta ação não pode ser desfeita.`
+            : undefined
+        }
+        confirmLabel="Excluir"
+        loadingLabel="Excluindo..."
+      />
     </div>
   );
 }

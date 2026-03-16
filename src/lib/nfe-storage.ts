@@ -107,6 +107,23 @@ export async function getNFeConference(id: string): Promise<NFeConference | null
   return getFromLocalStorage().find((c) => c.id === id) ?? null;
 }
 
+export async function deleteNFeConference(id: string): Promise<void> {
+  const supabase = getSupabase();
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { error } = await supabase.from("nfe_conferences").delete().eq("id", id);
+      if (!error) return;
+      if (error) console.error("[Supabase] deleteNFeConference:", error.message);
+    } catch (err) {
+      console.error("[Supabase] deleteNFeConference error:", err);
+    }
+  }
+  const list = getFromLocalStorage().filter((c) => c.id !== id);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+}
+
 export function createNFeConferenceFromInvoice(invoice: NFeInvoice): NFeConference {
   return {
     ...invoice,

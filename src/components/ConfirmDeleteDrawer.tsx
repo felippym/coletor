@@ -8,6 +8,8 @@ interface ConfirmDeleteDrawerProps {
   onConfirm: () => void | Promise<void>;
   title?: string;
   message?: string;
+  confirmLabel?: string;
+  loadingLabel?: string;
 }
 
 export function ConfirmDeleteDrawer({
@@ -16,6 +18,8 @@ export function ConfirmDeleteDrawer({
   onConfirm,
   title = "Excluir inventário?",
   message = "Esta ação não pode ser desfeita.",
+  confirmLabel = "Excluir",
+  loadingLabel = "Excluindo...",
 }: ConfirmDeleteDrawerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -92,7 +96,7 @@ export function ConfirmDeleteDrawer({
             disabled={isLoading}
             className="flex-1 rounded-xl bg-[var(--destructive)] py-3 font-semibold text-white transition-all duration-200 hover:bg-[var(--destructive-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? "Excluindo..." : "Excluir"}
+            {isLoading ? loadingLabel : confirmLabel}
           </button>
         </div>
       </div>
