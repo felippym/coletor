@@ -67,6 +67,26 @@ export function SkeletonDetailPage() {
   );
 }
 
+/** Skeleton para lista de usuários (página /users) */
+export function SkeletonUserList({ count = 4 }: { count?: number }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4"
+        >
+          <Skeleton className="h-4 w-24" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Skeleton para lista de cards (inventários, conferências) */
 export function SkeletonCardList({ count = 4 }: { count?: number }) {
   return (

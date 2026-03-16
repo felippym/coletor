@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { UserPlus, Trash2, KeyRound } from "lucide-react";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
+import { SkeletonUserList } from "@/components/Skeleton";
 
 interface User {
   id: string;
@@ -195,10 +196,10 @@ export default function UsersPage() {
 
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-[var(--foreground)]">
-              Usuários cadastrados ({users.length})
+              Usuários cadastrados {loading ? "(…)" : `(${users.length})`}
             </h2>
             {loading ? (
-              <p className="text-sm text-[var(--secondary)]">Carregando...</p>
+              <SkeletonUserList count={4} />
             ) : fetchError ? (
               <div className="rounded-xl border-2 border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
                 <p className="text-sm text-[var(--destructive)]">{fetchError}</p>
