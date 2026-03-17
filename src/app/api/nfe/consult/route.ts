@@ -59,11 +59,15 @@ function parseNFeXml(xml: string): NFeInvoice | null {
 
   const ide = infNFe.ide as Record<string, unknown> | undefined;
   const emit = infNFe.emit as Record<string, unknown> | undefined;
+  const dest = infNFe.dest as Record<string, unknown> | undefined;
   const detRaw = infNFe.det;
 
   const nNF = ide?.nNF != null ? String(ide.nNF) : "";
   const dhEmi = ide?.dhEmi != null ? String(ide.dhEmi) : "";
   const xNome = emit?.xNome != null ? String(emit.xNome) : "";
+  const emitCnpj = emit?.CNPJ != null ? String(emit.CNPJ) : emit?.CPF != null ? String(emit.CPF) : "";
+  const destXNome = dest?.xNome != null ? String(dest.xNome) : "";
+  const destCnpj = dest?.CNPJ != null ? String(dest.CNPJ) : dest?.CPF != null ? String(dest.CPF) : "";
   const chave = (infNFe["@_Id"] as string)?.replace?.("NFe", "") ?? "";
 
   const detList = Array.isArray(detRaw) ? detRaw : detRaw ? [detRaw] : [];
@@ -97,8 +101,11 @@ function parseNFeXml(xml: string): NFeInvoice | null {
     key: chave,
     invoiceNumber: nNF,
     supplierName: xNome,
+    supplierCnpj: emitCnpj || undefined,
     issueDate: dhEmi,
     products,
+    destRazaoSocial: destXNome || undefined,
+    destCnpj: destCnpj || undefined,
   };
 }
 

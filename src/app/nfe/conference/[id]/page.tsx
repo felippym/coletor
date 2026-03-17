@@ -3,13 +3,14 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera } from "lucide-react";
+import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera, FileDown } from "lucide-react";
 import { getNFeConference, saveNFeConference } from "@/lib/nfe-storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { ObservationField } from "@/components/ObservationField";
+import { generateConferencePdf } from "@/lib/generate-conference-pdf";
 import { SkeletonDetailPage } from "@/components/Skeleton";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
 
@@ -121,11 +122,13 @@ export default function NFeConferencePage() {
     router.push("/nfe/conferences");
   }, [router]);
 
+  const focusBarcodeInput = useCallback(() => {
+    setTimeout(() => barcodeInputRef.current?.focus(), 100);
+  }, []);
+
   useEffect(() => {
-    if (conference) {
-      barcodeInputRef.current?.focus();
-    }
-  }, [conference]);
+    if (conference) focusBarcodeInput();
+  }, [conference, focusBarcodeInput]);
 
   if (!conference) {
     return <SkeletonDetailPage />;
@@ -252,6 +255,14 @@ export default function NFeConferencePage() {
               >
                 <Camera className="h-5 w-5" />
               </button>
+              <button
+                onClick={() => generateConferencePdf(conference)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.98]"
+                aria-label="Gerar PDF"
+                title="Gerar PDF"
+              >
+                <FileDown className="h-5 w-5" />
+              </button>
               <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
                 <Package className="h-5 w-5 shrink-0 text-[var(--muted)]" />
                 <span className="text-sm text-[var(--secondary)]">
@@ -367,14 +378,20 @@ export default function NFeConferencePage() {
         <ScanConfirmation
           ean={confirmScan.ean}
           quantity={confirmScan.quantity}
-          onComplete={() => setConfirmScan(null)}
+          onComplete={() => {
+            setConfirmScan(null);
+            focusBarcodeInput();
+          }}
           productName={conference.products.find((p) => p.ean === confirmScan.ean)?.description}
         />
       )}
 
       <ConfirmDeleteDrawer
         isOpen={!!decreaseTarget}
-        onClose={() => setDecreaseTarget(null)}
+        onClose={() => {
+          setDecreaseTarget(null);
+          focusBarcodeInput();
+        }}
         onConfirm={() => {
           if (decreaseTarget) {
             updateProduct(decreaseTarget.originalIndex, {

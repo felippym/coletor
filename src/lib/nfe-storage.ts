@@ -38,11 +38,14 @@ export async function getNFeConferences(): Promise<NFeConference[]> {
           key: row.key ?? "",
           invoiceNumber: row.invoice_number ?? "",
           supplierName: row.supplier_name ?? "",
+          supplierCnpj: row.supplier_cnpj ?? undefined,
           issueDate: row.issue_date ?? "",
           products: (row.products ?? []) as NFeProduct[],
           createdAt: row.created_at ?? "",
           observation: row.observation ?? undefined,
           startedBy: row.started_by ?? undefined,
+          destRazaoSocial: row.dest_razao_social ?? undefined,
+          destCnpj: row.dest_cnpj ?? undefined,
         }));
       }
       if (error) console.error("[Supabase] getNFeConferences:", error.message);
@@ -65,11 +68,14 @@ export async function saveNFeConference(conference: NFeConference): Promise<void
           key: conference.key,
           invoice_number: conference.invoiceNumber,
           supplier_name: conference.supplierName,
+          supplier_cnpj: conference.supplierCnpj ?? null,
           issue_date: conference.issueDate,
           products: conference.products,
           created_at: conference.createdAt,
           observation: conference.observation ?? null,
           started_by: conference.startedBy ?? null,
+          dest_razao_social: conference.destRazaoSocial ?? null,
+          dest_cnpj: conference.destCnpj ?? null,
         },
         { onConflict: "id" }
       );
@@ -102,11 +108,14 @@ export async function getNFeConference(id: string): Promise<NFeConference | null
           key: data.key ?? "",
           invoiceNumber: data.invoice_number ?? "",
           supplierName: data.supplier_name ?? "",
+          supplierCnpj: data.supplier_cnpj ?? undefined,
           issueDate: data.issue_date ?? "",
           products: (data.products ?? []) as NFeProduct[],
           createdAt: data.created_at ?? "",
           observation: data.observation ?? undefined,
           startedBy: data.started_by ?? undefined,
+          destRazaoSocial: data.dest_razao_social ?? undefined,
+          destCnpj: data.dest_cnpj ?? undefined,
         };
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getNFeConference:", error.message);

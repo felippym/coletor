@@ -10,8 +10,12 @@ export interface NFeInvoice {
   key: string;
   invoiceNumber: string;
   supplierName: string;
+  supplierCnpj?: string;
   issueDate: string;
   products: NFeProduct[];
+  /** Destinatário (nossa empresa) - extraído do XML */
+  destRazaoSocial?: string;
+  destCnpj?: string;
 }
 
 export interface NFeConference extends NFeInvoice {
