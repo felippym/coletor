@@ -46,6 +46,7 @@ export async function getNFeConferences(): Promise<NFeConference[]> {
           startedBy: row.started_by ?? undefined,
           destRazaoSocial: row.dest_razao_social ?? undefined,
           destCnpj: row.dest_cnpj ?? undefined,
+          status: (row.status as NFeConference["status"]) ?? undefined,
         }));
       }
       if (error) console.error("[Supabase] getNFeConferences:", error.message);
@@ -76,6 +77,7 @@ export async function saveNFeConference(conference: NFeConference): Promise<void
           started_by: conference.startedBy ?? null,
           dest_razao_social: conference.destRazaoSocial ?? null,
           dest_cnpj: conference.destCnpj ?? null,
+          status: conference.status ?? null,
         },
         { onConflict: "id" }
       );
@@ -116,6 +118,7 @@ export async function getNFeConference(id: string): Promise<NFeConference | null
           startedBy: data.started_by ?? undefined,
           destRazaoSocial: data.dest_razao_social ?? undefined,
           destCnpj: data.dest_cnpj ?? undefined,
+          status: (data.status as NFeConference["status"]) ?? undefined,
         };
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getNFeConference:", error.message);

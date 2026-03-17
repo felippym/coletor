@@ -99,7 +99,7 @@ export function ScanConfirmation({ ean, quantity, onComplete, productName: produ
         <div className="mt-2 text-4xl font-bold tabular-nums">{countdown}</div>
       )}
       <div className="mt-2 text-lg font-medium">{produtoNome?.trim() || "NÃO CADASTRADO"}</div>
-      <div className="mt-0.5 font-mono text-sm opacity-90">{ean}</div>
+      <div className="mt-2 rounded-xl bg-white/30 px-4 py-3 font-mono text-xl font-bold tracking-widest shadow-inner">{ean}</div>
       <div className="mt-1 text-sm opacity-90">Quantidade: {quantity}</div>
     </div>
   );

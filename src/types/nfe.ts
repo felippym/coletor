@@ -18,9 +18,13 @@ export interface NFeInvoice {
   destCnpj?: string;
 }
 
+export type NFeConferenceStatus = "nao_iniciada" | "em_andamento" | "em_analise" | "concluida";
+
 export interface NFeConference extends NFeInvoice {
   id: string;
   createdAt: string;
   observation?: string;
   startedBy?: string;
+  /** Status definido manualmente pelo admin (sobrescreve o calculado) */
+  status?: NFeConferenceStatus;
 }

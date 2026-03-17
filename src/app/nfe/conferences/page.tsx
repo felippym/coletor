@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Clock, Package, MessageSquare, Trash2, User } from "lucide-react";
-import { getNFeConferences, deleteNFeConference } from "@/lib/nfe-storage";
+import { FileText, Clock, Package, MessageSquare, Trash2, User, ChevronDown } from "lucide-react";
+import { getNFeConferences, getNFeConference, saveNFeConference, deleteNFeConference } from "@/lib/nfe-storage";
 import { useAuth } from "@/components/AuthProvider";
 import { SkeletonCardList } from "@/components/Skeleton";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
-import type { NFeConference, NFeProduct } from "@/types/nfe";
+import type { NFeConference, NFeProduct, NFeConferenceStatus } from "@/types/nfe";
 
-type ConferenceStatus = "nao_iniciada" | "em_andamento" | "concluida";
+type ConferenceStatus = "nao_iniciada" | "em_andamento" | "em_analise" | "concluida";
 
 function getConferenceStatus(products: NFeProduct[]): ConferenceStatus {
   const totalCounted = products.reduce((s, p) => s + p.countedQty, 0);
@@ -41,6 +41,7 @@ function formatDate(iso: string) {
 const statusLabel: Record<ConferenceStatus, string> = {
   nao_iniciada: "Não iniciada",
   em_andamento: "Em andamento",
+  em_analise: "Em análise",
   concluida: "Concluída",
 };
 
@@ -50,6 +51,9 @@ const statusConfig: Record<ConferenceStatus, { className: string }> = {
   },
   em_andamento: {
     className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  },
+  em_analise: {
+    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
   },
   concluida: {
     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
@@ -61,6 +65,7 @@ export default function NFeConferencesPage() {
   const [conferences, setConferences] = useState<NFeConference[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<NFeConference | null>(null);
+  const [statusEditId, setStatusEditId] = useState<string | null>(null);
 
   useEffect(() => {
     getNFeConferences().then((data) => {
@@ -80,6 +85,26 @@ export default function NFeConferencesPage() {
     await deleteNFeConference(deleteTarget.id);
     setConferences((prev) => prev.filter((c) => c.id !== deleteTarget.id));
     setDeleteTarget(null);
+  };
+
+  useEffect(() => {
+    if (!statusEditId) return;
+    const handleClick = () => setStatusEditId(null);
+    const t = setTimeout(() => document.addEventListener("click", handleClick), 0);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("click", handleClick);
+    };
+  }, [statusEditId]);
+
+  const handleStatusChange = async (conf: NFeConference, newStatus: NFeConferenceStatus) => {
+    if (user !== "admin") return;
+    const full = await getNFeConference(conf.id);
+    if (!full) return;
+    const updated = { ...full, status: newStatus };
+    await saveNFeConference(updated);
+    setConferences((prev) => prev.map((c) => (c.id === conf.id ? updated : c)));
+    setStatusEditId(null);
   };
 
   return (
@@ -135,7 +160,8 @@ export default function NFeConferencesPage() {
                 )
                 .map((conf) => {
                   const products = conf.products ?? [];
-                  const status = getConferenceStatus(products);
+                  const computedStatus = getConferenceStatus(products);
+                  const status = (conf.status ?? computedStatus) as ConferenceStatus;
                   const { className: statusClass } = statusConfig[status];
                   const totalExpected = products
                     .filter((p) => p.expectedQty > 0)
@@ -163,11 +189,51 @@ export default function NFeConferencesPage() {
                               <MessageSquare className="inline-block ml-1 h-3.5 w-3.5 text-[var(--muted)] align-middle" aria-label="Tem observação" />
                             )}
                           </h3>
-                          <span
-                            className={`nfe-status-badge inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${statusClass}`}
-                          >
-                            {statusLabel[status] ?? "—"}
-                          </span>
+                          {user === "admin" ? (
+                            <div className="relative shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setStatusEditId(statusEditId === conf.id ? null : conf.id);
+                                }}
+                                className={`nfe-status-badge inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap transition-colors hover:opacity-90 ${statusClass}`}
+                              >
+                                {statusLabel[status] ?? "—"}
+                                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                              </button>
+                              {statusEditId === conf.id && (
+                                <div
+                                  className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] py-1 shadow-xl"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {(["nao_iniciada", "em_andamento", "em_analise", "concluida"] as ConferenceStatus[]).map((s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleStatusChange(conf, s);
+                                      }}
+                                      className={`block w-full px-3 py-2 text-left text-sm font-medium hover:bg-[var(--surface-hover)] ${
+                                        s === status ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "text-[var(--foreground)]"
+                                      }`}
+                                    >
+                                      {statusLabel[s]}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span
+                              className={`nfe-status-badge inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${statusClass}`}
+                            >
+                              {statusLabel[status] ?? "—"}
+                            </span>
+                          )}
                         </div>
 
                         {/* Linha 2: Data + Nº */}
