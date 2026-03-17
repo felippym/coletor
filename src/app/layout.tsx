@@ -31,8 +31,14 @@ export const metadata: Metadata = {
     title: "Inventário de Loja",
   },
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "152x152", type: "image/png" },
+    ],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",

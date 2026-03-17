@@ -12,6 +12,7 @@
     "db:migrate:open": "node scripts/open-sql-editor.js",
     "seed:produtos": "node scripts/seed-produtos.js",
     "auth:env": "node scripts/print-auth-hashes-env.js",
+    "icon:generate": "node scripts/generate-app-icon.js",
     "config:service-role": "node scripts/config-service-role.js",
     "nfe:cert": "node scripts/nfe-cert-to-base64.js"
   },
