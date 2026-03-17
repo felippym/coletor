@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Clock, Package, Box } from "lucide-react";
+import { Minus, Plus, Clock, Package, Box, Camera } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
 import type { InventoryStatus } from "@/types/inventory";
 
@@ -353,12 +353,27 @@ export default function InventoryScanPage() {
               </p>
             )}
 
-            <button
-              onClick={() => setCameraEnabled((prev) => !prev)}
-              className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.99]"
-            >
-              {cameraEnabled ? "Ocultar câmera" : "Escanear com câmera"}
-            </button>
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={() => setCameraEnabled((prev) => !prev)}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200 active:scale-[0.98] ${
+                  cameraEnabled
+                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
+                }`}
+                aria-label={cameraEnabled ? "Ocultar câmera" : "Escanear com câmera"}
+              >
+                <Camera className="h-5 w-5" />
+              </button>
+              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+                <Package className="h-5 w-5 shrink-0 text-[var(--muted)]" />
+                <span className="text-sm text-[var(--secondary)]">
+                  <span className="font-medium text-[var(--foreground)]">{mergedItems.length}</span> produtos
+                  {" · "}
+                  <span className="font-medium text-[var(--foreground)]">{totalItems}</span> itens
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

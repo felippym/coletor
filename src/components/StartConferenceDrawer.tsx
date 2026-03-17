@@ -59,7 +59,11 @@ export function StartConferenceDrawer({
       setName("");
       handleClose();
     } catch {
-      // Mantém o drawer aberto em caso de erro para o usuário tentar novamente
+      setIsVisible(false);
+      setTimeout(() => {
+        setIsClosing(false);
+        onClose();
+      }, 300);
     }
   };
 
@@ -106,15 +110,15 @@ export function StartConferenceDrawer({
             disabled={!name.trim() || isLoading}
             className="w-full rounded-xl bg-[var(--primary)] py-3 font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? (
-              <>
-                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--primary-foreground)] border-t-transparent" />
-                Consultando...
-              </>
-            ) : (
-              "Confirmar e Consultar"
-            )}
-          </button>
+              {isLoading ? (
+                <>
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--primary-foreground)] border-t-transparent" />
+                  Consultando...
+                </>
+              ) : (
+                "Confirmar e Consultar"
+              )}
+            </button>
         </form>
       </div>
     </div>
