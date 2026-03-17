@@ -245,7 +245,7 @@ export default function NFeConferencePage() {
                 onClick={() => setCameraEnabled((prev) => !prev)}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200 active:scale-[0.98] ${
                   cameraEnabled
-                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                    ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                     : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
                 }`}
                 aria-label={cameraEnabled ? "Ocultar câmera" : "Escanear com câmera"}
@@ -286,13 +286,13 @@ export default function NFeConferencePage() {
                   filteredProducts.map(({ product, originalIndex }) => {
                     const diff = product.countedQty - product.expectedQty;
                     const diffBgClass =
-                      diff < 0 ? "bg-[var(--destructive)]/5" : diff > 0 ? "bg-[var(--accent)]/10" : "bg-[var(--success)]/5";
+                      diff < 0 ? "bg-red-500/10" : diff > 0 ? "bg-amber-500/10" : "bg-emerald-500/10";
                     const diffClass =
                       diff === 0
-                        ? "text-[var(--success)]"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : diff > 0
-                          ? "text-[var(--accent)]"
-                          : "text-[var(--destructive)]";
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-red-600 dark:text-red-400";
                     return (
                       <div
                         key={`${product.ean}-${originalIndex}`}

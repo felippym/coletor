@@ -52,7 +52,7 @@ const statusConfig: Record<ConferenceStatus, { className: string }> = {
     className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
   },
   concluida: {
-    className: "bg-[var(--success)]/15 text-[var(--success)] border-[var(--success)]/30",
+    className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
   },
 };
 
@@ -198,7 +198,7 @@ export default function NFeConferencesPage() {
                           {user === "admin" && (
                             <button
                               onClick={(e) => handleDeleteClick(e, conf)}
-                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 transition-colors hover:bg-red-500/20"
                               aria-label="Excluir conferência"
                             >
                               <Trash2 className="h-4 w-4" />
