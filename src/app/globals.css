@@ -142,3 +142,9 @@ button:disabled, [aria-disabled="true"] {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
 }
+
+/* Fix status badge visibility on iOS Safari PWA */
+.nfe-status-badge {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

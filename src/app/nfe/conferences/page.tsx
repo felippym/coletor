@@ -46,7 +46,7 @@ const statusLabel: Record<ConferenceStatus, string> = {
 
 const statusConfig: Record<ConferenceStatus, { className: string }> = {
   nao_iniciada: {
-    className: "bg-[var(--muted)]/20 text-[var(--muted)] border-[var(--border)]",
+    className: "border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]",
   },
   em_andamento: {
     className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
@@ -134,12 +134,13 @@ export default function NFeConferencesPage() {
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 )
                 .map((conf) => {
-                  const status = getConferenceStatus(conf.products);
+                  const products = conf.products ?? [];
+                  const status = getConferenceStatus(products);
                   const { className: statusClass } = statusConfig[status];
-                  const totalExpected = conf.products
+                  const totalExpected = products
                     .filter((p) => p.expectedQty > 0)
                     .reduce((s, p) => s + p.expectedQty, 0);
-                  const totalCounted = conf.products.reduce(
+                  const totalCounted = products.reduce(
                     (s, p) => s + p.countedQty,
                     0
                   );
@@ -163,9 +164,9 @@ export default function NFeConferencesPage() {
                             )}
                           </h3>
                           <span
-                            className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusClass}`}
+                            className={`nfe-status-badge inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${statusClass}`}
                           >
-                            {statusLabel[status]}
+                            {statusLabel[status] ?? "—"}
                           </span>
                         </div>
 
@@ -182,7 +183,7 @@ export default function NFeConferencesPage() {
                           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-medium">
                             <span className="flex items-center gap-1 text-[var(--muted)]">
                               <Package className="h-3.5 w-3.5 shrink-0" />
-                              <span className="text-[var(--foreground)]">{conf.products.length}</span> produtos
+                              <span className="text-[var(--foreground)]">{products.length}</span> produtos
                             </span>
                             <span className="text-[var(--muted)]">
                               <span className="text-[var(--foreground)]">{totalCounted}</span>/{totalExpected} itens
