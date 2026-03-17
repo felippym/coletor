@@ -120,6 +120,7 @@ export default function Home() {
       <StartInventoryDrawer
         isOpen={showDrawer}
         onClose={() => setShowDrawer(false)}
+        createdBy={user}
       />
     </div>
   );

@@ -6,3 +6,4 @@ alter table public.nfe_conferences add column if not exists supplier_cnpj text;
 alter table public.nfe_conferences add column if not exists dest_razao_social text;
 alter table public.nfe_conferences add column if not exists dest_cnpj text;
 alter table public.nfe_conferences add column if not exists status text;
+alter table public.nfe_conferences add column if not exists created_by text;

@@ -8,9 +8,11 @@ import type { Inventory } from "@/types/inventory";
 interface StartInventoryDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Usuário logado (ipanema, leblon, admin) - para filtrar visibilidade */
+  createdBy?: string | null;
 }
 
-export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerProps) {
+export function StartInventoryDrawer({ isOpen, onClose, createdBy }: StartInventoryDrawerProps) {
   const [name, setName] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -56,6 +58,7 @@ export function StartInventoryDrawer({ isOpen, onClose }: StartInventoryDrawerPr
       createdAt: new Date().toISOString(),
       items: [],
       status: "em_contagem",
+      createdBy: createdBy ?? undefined,
     };
 
     await saveInventory(inventory);

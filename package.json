@@ -11,6 +11,7 @@
     "db:migrate": "node scripts/run-migration-status.js",
     "db:migrate:nfe": "node scripts/run-nfe-migration.js",
     "db:migrate:nfe:open": "node scripts/open-nfe-migration.js",
+    "db:migrate:created-by:open": "node scripts/open-created-by-migration.js",
     "db:migrate:open": "node scripts/open-sql-editor.js",
     "seed:produtos": "node scripts/seed-produtos.js",
     "auth:env": "node scripts/print-auth-hashes-env.js",

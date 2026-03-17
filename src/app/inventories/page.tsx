@@ -36,10 +36,14 @@ export default function InventoriesPage() {
 
   useEffect(() => {
     getInventories().then((data) => {
-      setInventories(data);
+      const filtered =
+        user === "admin"
+          ? data
+          : data.filter((inv) => inv.createdBy === user);
+      setInventories(filtered);
       setLoading(false);
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!statusEditId) return;
@@ -309,6 +313,19 @@ export default function InventoriesPage() {
 
                     {user === "admin" && (
                       <div className="absolute right-10 top-5 z-10 flex items-center gap-2">
+                        {inv.createdBy && (
+                          <span
+                            className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                              inv.createdBy.toLowerCase() === "leblon"
+                                ? "border-pink-500/40 bg-pink-500/15 text-pink-600 dark:text-pink-400"
+                                : inv.createdBy.toLowerCase() === "ipanema"
+                                  ? "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400"
+                                  : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]"
+                            }`}
+                          >
+                            {inv.createdBy}
+                          </span>
+                        )}
                         <span
                           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusClass}`}
                         >
@@ -370,6 +387,7 @@ export default function InventoriesPage() {
       <StartInventoryDrawer
         isOpen={showStartDrawer}
         onClose={() => setShowStartDrawer(false)}
+        createdBy={user}
       />
     </div>
   );

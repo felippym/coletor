@@ -8,9 +8,10 @@ interface ObservationFieldProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
-export function ObservationField({ value, onChange, placeholder = "Adicione uma observação...", className }: ObservationFieldProps) {
+export function ObservationField({ value, onChange, placeholder = "Adicione uma observação...", className, readOnly = false }: ObservationFieldProps) {
   const [showField, setShowField] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -23,6 +24,19 @@ export function ObservationField({ value, onChange, placeholder = "Adicione uma 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showField]);
+
+  if (readOnly && value) {
+    return (
+      <div className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 ${className ?? ""}`}>
+        <label className="flex items-center gap-2 text-sm font-medium text-[var(--muted)] mb-2">
+          <MessageSquare className="h-4 w-4" />
+          Observação
+        </label>
+        <p className="text-sm text-[var(--foreground)] whitespace-pre-wrap">{value}</p>
+      </div>
+    );
+  }
+  if (readOnly) return null;
 
   return (
     <div className={className ?? ""} ref={containerRef}>

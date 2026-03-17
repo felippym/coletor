@@ -39,6 +39,7 @@ function rowToInventory(row: Record<string, unknown>): Inventory {
     items: row.items ?? [],
     status: row.status ?? "em_contagem",
     observation: row.observation ?? undefined,
+    createdBy: row.created_by as string | undefined,
   } as Record<string, unknown>);
 }
 
@@ -81,6 +82,7 @@ export async function saveInventory(inventory: Inventory): Promise<void> {
           items: inventory.items,
           status: inventory.status ?? "em_contagem",
           observation: inventory.observation ?? null,
+          created_by: inventory.createdBy ?? null,
         },
         { onConflict: "id" }
       );
@@ -102,14 +104,15 @@ export async function getInventory(id: string): Promise<Inventory | null> {
         .eq("id", id)
         .single();
       if (!error && data) {
-        return {
+        return withDefaultStatus({
           id: data.id,
           name: data.name,
           createdAt: data.created_at,
           items: data.items ?? [],
           status: data.status ?? "em_contagem",
           observation: data.observation ?? undefined,
-        };
+          createdBy: data.created_by as string | undefined,
+        } as Record<string, unknown>);
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getInventory:", error.message);
     } catch (err) {

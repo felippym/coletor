@@ -38,11 +38,13 @@ import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
 import { ObservationField } from "@/components/ObservationField";
 import { SkeletonDetailPage } from "@/components/Skeleton";
+import { useAuth } from "@/components/AuthProvider";
 import type { Inventory, InventoryItem } from "@/types/inventory";
 
 export default function InventoryScanPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const id = params.id as string;
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,8 +65,13 @@ export default function InventoryScanPage() {
   }, [inventory]);
 
   useEffect(() => {
-    getInventory(id).then(setInventory);
-  }, [id]);
+    getInventory(id).then((inv) => {
+      setInventory(inv);
+      if (inv && user && user !== "admin" && inv.createdBy !== user) {
+        router.replace("/inventories");
+      }
+    });
+  }, [id, user, router]);
 
   const totalItems = useMemo(
     () => inventory?.items.reduce((s, i) => s + i.quantity, 0) ?? 0,

@@ -54,8 +54,13 @@ export default function NFeConferencePage() {
   const [copiedEan, setCopiedEan] = useState<string | null>(null);
 
   useEffect(() => {
-    getNFeConference(id).then(setConference);
-  }, [id]);
+    getNFeConference(id).then((conf) => {
+      setConference(conf);
+      if (conf && user && user !== "admin" && conf.createdBy !== user) {
+        router.replace("/nfe/conferences");
+      }
+    });
+  }, [id, user, router]);
 
   const filteredProducts = useMemo(() => {
     if (!conference) return [];
@@ -73,7 +78,7 @@ export default function NFeConferencePage() {
   const processBarcode = useCallback(
     (ean: string) => {
       const trimmed = ean.trim();
-      if (!trimmed || !conference || isScanBlocked) return;
+      if (!trimmed || !conference || isScanBlocked || conference.status === "encerrado") return;
 
       const products = [...conference.products];
       const idx = products.findIndex((p) => p.ean === trimmed);
@@ -104,6 +109,8 @@ export default function NFeConferencePage() {
     },
     [conference, isScanBlocked]
   );
+
+  const isReadOnly = conference?.status === "encerrado";
 
   const updateProduct = useCallback(
     (index: number, updates: Partial<NFeProduct>) => {
@@ -160,10 +167,14 @@ export default function NFeConferencePage() {
     [conference]
   );
 
-  const handleCloseFinishModal = useCallback(() => {
+  const handleCloseFinishModal = useCallback(async () => {
     setShowFinishModal(false);
+    if (conference) {
+      const updated = { ...conference, status: "concluida" as const };
+      await saveNFeConference(updated);
+    }
     router.push("/nfe/conferences");
-  }, [router]);
+  }, [router, conference]);
 
   const focusBarcodeInput = useCallback(() => {
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
@@ -198,7 +209,7 @@ export default function NFeConferencePage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
-      <HiddenBarcodeInput onScan={processBarcode} />
+      {!isReadOnly && <HiddenBarcodeInput onScan={processBarcode} />}
 
       <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-4 py-4 pr-20">
@@ -251,6 +262,11 @@ export default function NFeConferencePage() {
 
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-[var(--border)] bg-[var(--background)] p-4">
+          {isReadOnly && (
+            <div className="mx-auto max-w-2xl rounded-xl border border-[var(--border)] bg-[var(--surface-hover)] px-4 py-3 text-center text-sm text-[var(--secondary)]">
+              Conferência encerrada — somente visualização
+            </div>
+          )}
           <div className="mx-auto max-w-2xl">
             <div className="relative">
               <input
@@ -258,8 +274,9 @@ export default function NFeConferencePage() {
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
-                autoFocus
-                placeholder="Digite ou escaneie o código"
+                autoFocus={!isReadOnly}
+                placeholder={isReadOnly ? "Conferência encerrada" : "Digite ou escaneie o código"}
+                disabled={isReadOnly}
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -275,11 +292,12 @@ export default function NFeConferencePage() {
                 type="button"
                 onPointerDown={(e) => {
                   e.preventDefault();
+                  if (isReadOnly) return;
                   barcodeInputRef.current?.blur();
                   const value = barcodeInput.trim();
                   if (value) processBarcode(value);
                 }}
-                disabled={!barcodeInput.trim()}
+                disabled={!barcodeInput.trim() || isReadOnly}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--accent)] bg-[var(--accent)] text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 disabled:border-[var(--border)] disabled:bg-[var(--surface)] disabled:text-[var(--muted)]"
                 aria-label="Confirmar"
               >
@@ -313,7 +331,8 @@ export default function NFeConferencePage() {
             <div className="mt-4 flex items-center gap-3">
               <button
                 ref={searchButtonRef}
-                onClick={() => setShowSearch((prev) => !prev)}
+                onClick={() => !isReadOnly && setShowSearch((prev) => !prev)}
+                disabled={isReadOnly}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200 active:scale-[0.98] ${
                   showSearch
                     ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -324,7 +343,8 @@ export default function NFeConferencePage() {
                 <Search className="h-5 w-5" />
               </button>
               <button
-                onClick={() => setCameraEnabled((prev) => !prev)}
+                onClick={() => !isReadOnly && setCameraEnabled((prev) => !prev)}
+                disabled={isReadOnly}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200 active:scale-[0.98] ${
                   cameraEnabled
                     ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -360,7 +380,7 @@ export default function NFeConferencePage() {
 
         <div className="flex-1 overflow-auto">
           <div className="mx-auto max-w-2xl space-y-4 p-4">
-            {cameraEnabled && (
+            {cameraEnabled && !isReadOnly && (
               <div className="overflow-hidden rounded-2xl border-2 border-[var(--border)] shadow-sm">
                 <BarcodeScanner onScan={processBarcode} enabled={cameraEnabled} />
               </div>
@@ -414,30 +434,32 @@ export default function NFeConferencePage() {
                               )}
                             </span>
                           </div>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                product.countedQty > 0 &&
-                                setDecreaseTarget({ originalIndex, product })
-                              }
-                              className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
-                              disabled={product.countedQty <= 0}
-                              aria-label="Diminuir quantidade"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
-                            {user === "admin" && (
+                          {!isReadOnly && (
+                            <div className="flex shrink-0 items-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => setDeleteProductTarget({ originalIndex, product })}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]"
-                                aria-label="Excluir produto"
+                                onClick={() =>
+                                  product.countedQty > 0 &&
+                                  setDecreaseTarget({ originalIndex, product })
+                                }
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
+                                disabled={product.countedQty <= 0}
+                                aria-label="Diminuir quantidade"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Minus className="h-4 w-4" />
                               </button>
-                            )}
-                          </div>
+                              {user === "admin" && (
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteProductTarget({ originalIndex, product })}
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]"
+                                  aria-label="Excluir produto"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                           <span className="text-[var(--muted)]">
@@ -464,14 +486,17 @@ export default function NFeConferencePage() {
                 setConference(updated);
                 void saveNFeConference(updated);
               }}
+              readOnly={isReadOnly}
             />
 
-            <button
-              onClick={handleFinish}
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)]"
-            >
-              Finalizar Conferência
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={handleFinish}
+                className="flex h-14 w-full items-center justify-center rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] mb-[env(safe-area-inset-bottom)]"
+              >
+                Finalizar Conferência
+              </button>
+            )}
           </div>
         </div>
       </main>

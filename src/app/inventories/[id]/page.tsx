@@ -41,8 +41,8 @@ const statusConfig: Record<InventoryStatus, { className: string }> = {
 export default function InventoryDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const id = params.id as string;
-  useAuth();
 
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [search, setSearch] = useState("");
@@ -50,8 +50,13 @@ export default function InventoryDetailsPage() {
   const [expandedCodesKey, setExpandedCodesKey] = useState<string | null>(null);
 
   useEffect(() => {
-    getInventory(id).then(setInventory);
-  }, [id]);
+    getInventory(id).then((inv) => {
+      setInventory(inv);
+      if (inv && user && user !== "admin" && inv.createdBy !== user) {
+        router.replace("/inventories");
+      }
+    });
+  }, [id, user, router]);
 
   useEffect(() => {
     if (!inventory?.items.length) return;

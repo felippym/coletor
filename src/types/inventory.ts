@@ -12,4 +12,6 @@ export interface Inventory {
   items: InventoryItem[];
   status: InventoryStatus;
   observation?: string;
+  /** Usuário que criou (ipanema, leblon, admin) - visível apenas para criador + admin */
+  createdBy?: string;
 }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileText, KeyRound, List } from "lucide-react";
+import { useAuth } from "@/components/AuthProvider";
 import {
   createNFeConferenceFromInvoice,
   saveNFeConference,
@@ -12,6 +13,7 @@ import type { NFeInvoice } from "@/types/nfe";
 
 export default function NFeImportPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [mode, setMode] = useState<"chave" | "xml">("chave");
   const [chave, setChave] = useState("");
   const [xml, setXml] = useState("");
@@ -55,7 +57,7 @@ export default function NFeImportPage() {
       }
 
       const invoice = data as NFeInvoice;
-      const conference = createNFeConferenceFromInvoice(invoice);
+      const conference = createNFeConferenceFromInvoice(invoice, undefined, user ?? undefined);
       await saveNFeConference(conference);
       router.push(`/nfe/conference/${conference.id}`);
     } catch (err) {

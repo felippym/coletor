@@ -9,11 +9,11 @@ import { SkeletonCardList } from "@/components/Skeleton";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import type { NFeConference, NFeProduct, NFeConferenceStatus } from "@/types/nfe";
 
-type ConferenceStatus = "nao_iniciada" | "em_andamento" | "em_analise" | "concluida";
+type ConferenceStatus = "em_andamento" | "em_analise" | "concluida" | "encerrado";
 
 function getConferenceStatus(products: NFeProduct[]): ConferenceStatus {
   const totalCounted = products.reduce((s, p) => s + p.countedQty, 0);
-  if (totalCounted === 0) return "nao_iniciada";
+  if (totalCounted === 0) return "em_andamento";
 
   const nfeProducts = products.filter((p) => p.expectedQty > 0);
   const allMatch =
@@ -39,16 +39,13 @@ function formatDate(iso: string) {
 }
 
 const statusLabel: Record<ConferenceStatus, string> = {
-  nao_iniciada: "Não iniciada",
   em_andamento: "Em andamento",
   em_analise: "Em análise",
   concluida: "Concluída",
+  encerrado: "Encerrado",
 };
 
 const statusConfig: Record<ConferenceStatus, { className: string }> = {
-  nao_iniciada: {
-    className: "border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]",
-  },
   em_andamento: {
     className: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
   },
@@ -57,6 +54,9 @@ const statusConfig: Record<ConferenceStatus, { className: string }> = {
   },
   concluida: {
     className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  },
+  encerrado: {
+    className: "border border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]",
   },
 };
 
@@ -69,10 +69,14 @@ export default function NFeConferencesPage() {
 
   useEffect(() => {
     getNFeConferences().then((data) => {
-      setConferences(data);
+      const filtered =
+        user === "admin"
+          ? data
+          : data.filter((conf) => conf.createdBy === user);
+      setConferences(filtered);
       setLoading(false);
     });
-  }, []);
+  }, [user]);
 
   const handleDeleteClick = (e: React.MouseEvent, conf: NFeConference) => {
     e.preventDefault();
@@ -181,14 +185,29 @@ export default function NFeConferencesPage() {
                         href={`/nfe/conference/${conf.id}`}
                         className="block -m-4 p-4"
                       >
-                        {/* Linha 1: Título + Status */}
+                        {/* Linha 1: Título + Tag criador (admin) + Status */}
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="min-w-0 flex-1 font-semibold text-[var(--foreground)] text-sm leading-tight line-clamp-2">
-                            {conf.supplierName}
-                            {conf.observation && (
-                              <MessageSquare className="inline-block ml-1 h-3.5 w-3.5 text-[var(--muted)] align-middle" aria-label="Tem observação" />
+                          <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2">
+                            <h3 className="min-w-0 font-semibold text-[var(--foreground)] text-sm leading-tight line-clamp-2">
+                              {conf.supplierName}
+                              {conf.observation && (
+                                <MessageSquare className="inline-block ml-1 h-3.5 w-3.5 text-[var(--muted)] align-middle" aria-label="Tem observação" />
+                              )}
+                            </h3>
+                            {user === "admin" && conf.createdBy && (
+                              <span
+                                className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
+                                  conf.createdBy.toLowerCase() === "leblon"
+                                    ? "border-pink-500/40 bg-pink-500/15 text-pink-600 dark:text-pink-400"
+                                    : conf.createdBy.toLowerCase() === "ipanema"
+                                      ? "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400"
+                                      : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]"
+                                }`}
+                              >
+                                {conf.createdBy}
+                              </span>
                             )}
-                          </h3>
+                          </div>
                           {user === "admin" ? (
                             <div className="relative shrink-0">
                               <button
@@ -208,7 +227,7 @@ export default function NFeConferencesPage() {
                                   className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] py-1 shadow-xl"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  {(["nao_iniciada", "em_andamento", "em_analise", "concluida"] as ConferenceStatus[]).map((s) => (
+                                  {(["em_andamento", "em_analise", "concluida", "encerrado"] as ConferenceStatus[]).map((s) => (
                                     <button
                                       key={s}
                                       type="button"
