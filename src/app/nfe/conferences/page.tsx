@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
-import { FileText, Clock, Package, MessageSquare, Trash2, User, ChevronDown } from "lucide-react";
+import { FileText, Clock, Package, MessageSquare, Trash2, User, ChevronDown, ChevronUp, Filter, RotateCcw } from "lucide-react";
 import { getNFeConferences, getNFeConference, saveNFeConference, deleteNFeConference } from "@/lib/nfe-storage";
 import { useAuth } from "@/components/AuthProvider";
 import { SkeletonCardList } from "@/components/Skeleton";
@@ -66,6 +66,49 @@ export default function NFeConferencesPage() {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<NFeConference | null>(null);
   const [statusEditId, setStatusEditId] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<ConferenceStatus | "todos">("todos");
+  const [filterCreatedBy, setFilterCreatedBy] = useState<string | "todos">("todos");
+  const [filterSearch, setFilterSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showFilters) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) {
+        setShowFilters(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilters]);
+
+  const filteredConferences = useMemo(() => {
+    return conferences.filter((conf) => {
+      const products = conf.products ?? [];
+      const computedStatus = getConferenceStatus(products);
+      const status = (conf.status ?? computedStatus) as ConferenceStatus;
+
+      if (filterStatus !== "todos" && status !== filterStatus) return false;
+      if (filterCreatedBy !== "todos" && conf.createdBy !== filterCreatedBy) return false;
+
+      if (filterSearch.trim()) {
+        const q = filterSearch.trim().toLowerCase();
+        const matchSupplier = conf.supplierName.toLowerCase().includes(q);
+        const matchInvoice = conf.invoiceNumber.toLowerCase().includes(q);
+        const matchStartedBy = conf.startedBy?.toLowerCase().includes(q);
+        const matchCreatedBy = conf.createdBy?.toLowerCase().includes(q);
+        if (!matchSupplier && !matchInvoice && !matchStartedBy && !matchCreatedBy) return false;
+      }
+
+      return true;
+    });
+  }, [conferences, filterStatus, filterCreatedBy, filterSearch]);
+
+  const createdByOptions = useMemo(() => {
+    const users = [...new Set(conferences.map((c) => c.createdBy).filter(Boolean))] as string[];
+    return users.sort();
+  }, [conferences]);
 
   useEffect(() => {
     getNFeConferences().then((data) => {
@@ -141,6 +184,101 @@ export default function NFeConferencesPage() {
             Nova conferência
           </Link>
 
+          {!loading && conferences.length > 0 && user === "admin" && (
+            <div ref={filtersRef} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+              <div className="flex items-center justify-between gap-2 p-3">
+                <button
+                  type="button"
+                  onClick={() => setShowFilters((v) => !v)}
+                  className="flex flex-1 items-center justify-between gap-2 text-left text-sm font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] -m-1 p-1 rounded-lg"
+                >
+                  <span className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtros
+                    <span className="text-xs font-normal">
+                      ({filteredConferences.length} de {conferences.length})
+                    </span>
+                  </span>
+                  {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterSearch("");
+                    setFilterStatus("todos");
+                    setFilterCreatedBy("todos");
+                  }}
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-hover)] px-2.5 py-1.5 text-xs font-medium text-[var(--secondary)] transition-colors hover:bg-[var(--border)]"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Limpar
+                </button>
+              </div>
+              {showFilters && (
+                <div className="space-y-3 border-t border-[var(--border)] p-3">
+                  <input
+                    type="search"
+                    placeholder="Buscar por fornecedor, Nº nota, conferente..."
+                    value={filterSearch}
+                    onChange={(e) => setFilterSearch(e.target.value)}
+                    className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs text-[var(--muted)] self-center">Status:</span>
+                    {(["todos", "em_andamento", "em_analise", "concluida", "encerrado"] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setFilterStatus(s)}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                          filterStatus === s
+                            ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                            : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)] hover:border-[var(--border)]"
+                        }`}
+                      >
+                        {s === "todos" ? "Todos" : statusLabel[s]}
+                      </button>
+                    ))}
+                  </div>
+                  {user === "admin" && createdByOptions.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs text-[var(--muted)] self-center">Criador:</span>
+                      <button
+                        type="button"
+                        onClick={() => setFilterCreatedBy("todos")}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                          filterCreatedBy === "todos"
+                            ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                            : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]"
+                        }`}
+                      >
+                        Todos
+                      </button>
+                      {createdByOptions.map((u) => (
+                        <button
+                          key={u}
+                          type="button"
+                          onClick={() => setFilterCreatedBy(u)}
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                            filterCreatedBy === u
+                              ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                              : u.toLowerCase() === "leblon"
+                                ? "border-pink-500/40 bg-pink-500/10 text-pink-600 dark:text-pink-400"
+                                : u.toLowerCase() === "ipanema"
+                                  ? "border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                                  : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]"
+                          }`}
+                        >
+                          {u}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {loading ? (
             <SkeletonCardList count={4} />
           ) : conferences.length === 0 ? (
@@ -157,7 +295,7 @@ export default function NFeConferencesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {conferences
+              {filteredConferences
                 .sort(
                   (a, b) =>
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
