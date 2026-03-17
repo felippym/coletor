@@ -13,6 +13,7 @@
     "seed:produtos": "node scripts/seed-produtos.js",
     "auth:env": "node scripts/print-auth-hashes-env.js",
     "icon:generate": "node scripts/generate-app-icon.js",
+    "logo:transparent": "node scripts/logo-transparent.js",
     "config:service-role": "node scripts/config-service-role.js",
     "nfe:cert": "node scripts/nfe-cert-to-base64.js"
   },

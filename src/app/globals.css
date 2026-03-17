@@ -98,10 +98,7 @@ button:disabled, [aria-disabled="true"] {
   cursor: not-allowed;
 }
 
-/* Logo: invert apenas no tema escuro */
-[data-theme="dark"] .logo {
-  filter: invert(1);
-}
+/* Logo: gold on black - exibido como está em ambos os temas */
 
 /* Altura mínima para mobile (100dvh evita corte pela barra do navegador) */
 .min-h-dvh {

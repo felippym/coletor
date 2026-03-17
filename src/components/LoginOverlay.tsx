@@ -40,10 +40,9 @@ export function LoginOverlay({ onLogin }: LoginOverlayProps) {
         <div className="mb-6 text-center">
           <img
             src="/logo.png"
-            alt="Logo"
+            alt="Cutelaria do ISAÍAS"
             className="logo mx-auto mb-4 h-24 w-auto object-contain sm:h-28"
           />
-          
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
