@@ -156,7 +156,7 @@ export default function NFeConferencePage() {
         <div className="mx-auto max-w-2xl px-4 py-4 pr-20">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
             <Link
-              href="/nfe"
+              href="/nfe/conferences"
               className="flex w-fit items-center gap-1.5 text-[var(--secondary)] transition-colors hover:text-[var(--foreground)]"
             >
               <svg
