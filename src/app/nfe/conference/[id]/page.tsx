@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera, FileDown, Trash2 } from "lucide-react";
+import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera, FileDown, Trash2, Search } from "lucide-react";
 import { getNFeConference, saveNFeConference } from "@/lib/nfe-storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -36,6 +36,8 @@ export default function NFeConferencePage() {
   const { user } = useAuth();
   const id = params.id as string;
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
 
   const [conference, setConference] = useState<NFeConference | null>(null);
   const [search, setSearch] = useState("");
@@ -46,6 +48,7 @@ export default function NFeConferencePage() {
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [finishDrawerLoading, setFinishDrawerLoading] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
 
   useEffect(() => {
@@ -172,6 +175,21 @@ export default function NFeConferencePage() {
     }
   }, [id, conference, focusBarcodeInput]);
 
+  useEffect(() => {
+    if (!showSearch) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        searchContainerRef.current?.contains(target) ||
+        searchButtonRef.current?.contains(target)
+      )
+        return;
+      if (!search.trim()) setShowSearch(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSearch, search]);
+
   if (!conference) {
     return <SkeletonDetailPage />;
   }
@@ -232,14 +250,7 @@ export default function NFeConferencePage() {
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-[var(--border)] bg-[var(--background)] p-4">
           <div className="mx-auto max-w-2xl">
-            <input
-              type="search"
-              placeholder="Buscar produto ou EAN..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
-            />
-            <div className="relative mt-4">
+            <div className="relative">
               <input
                 ref={barcodeInputRef}
                 type="text"
@@ -285,7 +296,31 @@ export default function NFeConferencePage() {
                 </svg>
               </button>
             </div>
+            {showSearch && (
+              <div ref={searchContainerRef} className="mt-4">
+                <input
+                  type="search"
+                  placeholder="Buscar produto ou EAN..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
+                  className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
+                />
+              </div>
+            )}
             <div className="mt-4 flex items-center gap-3">
+              <button
+                ref={searchButtonRef}
+                onClick={() => setShowSearch((prev) => !prev)}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200 active:scale-[0.98] ${
+                  showSearch
+                    ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]"
+                }`}
+                aria-label={showSearch ? "Ocultar busca" : "Buscar produto ou EAN"}
+              >
+                <Search className="h-5 w-5" />
+              </button>
               <button
                 onClick={() => setCameraEnabled((prev) => !prev)}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-200 active:scale-[0.98] ${
@@ -412,7 +447,7 @@ export default function NFeConferencePage() {
             <ObservationField
               value={conference.observation ?? ""}
               onChange={(val) => {
-                const updated = { ...conference, observation: val.trim() || undefined };
+                const updated = { ...conference, observation: val.trim() ? val : undefined };
                 setConference(updated);
                 void saveNFeConference(updated);
               }}

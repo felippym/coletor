@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Plus, MessageSquare } from "lucide-react";
 
 interface ObservationFieldProps {
@@ -12,9 +12,20 @@ interface ObservationFieldProps {
 
 export function ObservationField({ value, onChange, placeholder = "Adicione uma observação...", className }: ObservationFieldProps) {
   const [showField, setShowField] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showField) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current?.contains(e.target as Node)) return;
+      setShowField(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showField]);
 
   return (
-    <div className={className ?? ""}>
+    <div className={className ?? ""} ref={containerRef}>
       {showField ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
           <div className="flex items-center justify-between gap-2 mb-2">
