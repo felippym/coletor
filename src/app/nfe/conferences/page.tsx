@@ -148,76 +148,61 @@ export default function NFeConferencesPage() {
                   return (
                     <div
                       key={conf.id}
-                      className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-5 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
+                      className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-4 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
                     >
                       <Link
                         href={`/nfe/conference/${conf.id}`}
-                        className="block -m-5 p-5 pr-10"
+                        className="block -m-4 p-4"
                       >
-                        {/* Top row */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-hover)]">
-                              <FileText className="h-5 w-5 text-[var(--muted)]" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-[var(--foreground)] text-base tracking-tight">
-                                  {conf.supplierName}
-                                </h3>
-                                {conf.observation && (
-                                  <MessageSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" aria-label="Tem observação" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-0.5 text-sm text-[var(--muted)]">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>{formattedDate}</span>
-                                <span className="text-[var(--border)]">•</span>
-                                <span>Nº {conf.invoiceNumber}</span>
-                              </div>
-                            </div>
-                          </div>
+                        {/* Linha 1: Título + Status */}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="min-w-0 flex-1 font-semibold text-[var(--foreground)] text-sm leading-tight line-clamp-2">
+                            {conf.supplierName}
+                            {conf.observation && (
+                              <MessageSquare className="inline-block ml-1 h-3.5 w-3.5 text-[var(--muted)] align-middle" aria-label="Tem observação" />
+                            )}
+                          </h3>
                           <span
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium shrink-0 ${statusClass}`}
+                            className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusClass}`}
                           >
                             {statusLabel[status]}
                           </span>
                         </div>
 
-                        {/* Bottom row */}
-                        <div className="pt-3 border-t border-[var(--border)]/50">
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                              <div className="flex items-center gap-1.5 text-[var(--muted)]">
-                                <Package className="h-3.5 w-3.5" />
-                                <span>
-                                  <span className="font-medium text-[var(--foreground)]">{conf.products.length}</span> produtos
-                                </span>
-                              </div>
-                              <span className="text-[var(--border)]">•</span>
-                              <span className="text-[var(--muted)]">
-                                <span className="font-medium text-[var(--foreground)]">{totalCounted}</span>/{totalExpected} itens contados
+                        {/* Linha 2: Data + Nº */}
+                        <div className="flex items-center gap-2 text-xs text-[var(--muted)] mb-2">
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          <span>{formattedDate}</span>
+                          <span className="text-[var(--border)]">•</span>
+                          <span>Nº {conf.invoiceNumber}</span>
+                        </div>
+
+                        {/* Linha 3: Produtos + Itens + Usuário + Delete */}
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border)]/50">
+                          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-medium">
+                            <span className="flex items-center gap-1 text-[var(--muted)]">
+                              <Package className="h-3.5 w-3.5 shrink-0" />
+                              <span className="text-[var(--foreground)]">{conf.products.length}</span> produtos
+                            </span>
+                            <span className="text-[var(--muted)]">
+                              <span className="text-[var(--foreground)]">{totalCounted}</span>/{totalExpected} itens
+                            </span>
+                            {conf.startedBy && (
+                              <span className="flex items-center gap-1 text-[var(--muted)]">
+                                <User className="h-3.5 w-3.5 shrink-0" />
+                                {conf.startedBy}
                               </span>
-                              {conf.startedBy && (
-                                <>
-                                  <span className="text-[var(--border)]">•</span>
-                                  <span className="flex items-center gap-1.5 text-[var(--muted)]">
-                                    <User className="h-3.5 w-3.5" />
-                                    <span className="font-medium text-[var(--foreground)]">{conf.startedBy}</span>
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                            {user === "admin" && (
-                              <button
-                                onClick={(e) => handleDeleteClick(e, conf)}
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
-                                aria-label="Excluir conferência"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
                             )}
                           </div>
+                          {user === "admin" && (
+                            <button
+                              onClick={(e) => handleDeleteClick(e, conf)}
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
+                              aria-label="Excluir conferência"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </Link>
                     </div>
