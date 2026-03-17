@@ -42,6 +42,7 @@ export default function NFeConferencePage() {
   const [conference, setConference] = useState<NFeConference | null>(null);
   const [search, setSearch] = useState("");
   const [confirmScan, setConfirmScan] = useState<{ ean: string; quantity: number } | null>(null);
+  const [isScanBlocked, setIsScanBlocked] = useState(false);
   const [decreaseTarget, setDecreaseTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
   const [deleteProductTarget, setDeleteProductTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
   const [showFinishDrawer, setShowFinishDrawer] = useState(false);
@@ -50,6 +51,7 @@ export default function NFeConferencePage() {
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [copiedEan, setCopiedEan] = useState<string | null>(null);
 
   useEffect(() => {
     getNFeConference(id).then(setConference);
@@ -71,7 +73,7 @@ export default function NFeConferencePage() {
   const processBarcode = useCallback(
     (ean: string) => {
       const trimmed = ean.trim();
-      if (!trimmed || !conference) return;
+      if (!trimmed || !conference || isScanBlocked) return;
 
       const products = [...conference.products];
       const idx = products.findIndex((p) => p.ean === trimmed);
@@ -100,7 +102,7 @@ export default function NFeConferencePage() {
       setConfirmScan({ ean: trimmed, quantity: totalQty });
       setBarcodeInput("");
     },
-    [conference]
+    [conference, isScanBlocked]
   );
 
   const updateProduct = useCallback(
@@ -391,15 +393,26 @@ export default function NFeConferencePage() {
                             <p className="text-sm font-medium leading-snug text-[var(--foreground)]">
                               {product.description}
                             </p>
-                            <button
-                              type="button"
-                              onClick={() => navigator.clipboard.writeText(product.ean)}
-                              className="mt-1 flex items-center gap-1.5 font-mono text-xs text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
-                              title="Copiar EAN"
-                            >
-                              {product.ean}
-                              <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
-                            </button>
+                            <span className="mt-1 flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(product.ean);
+                                  setCopiedEan(product.ean);
+                                  setTimeout(() => setCopiedEan(null), 2000);
+                                }}
+                                className="flex items-center gap-1.5 font-mono text-xs text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                                title={copiedEan === product.ean ? "Copiado" : "Copiar EAN"}
+                              >
+                                {product.ean}
+                                <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+                              </button>
+                              {copiedEan === product.ean && (
+                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400" title="Copiado">
+                                  Copiado
+                                </span>
+                              )}
+                            </span>
                           </div>
                           <div className="flex shrink-0 items-center gap-1">
                             <button
@@ -468,9 +481,11 @@ export default function NFeConferencePage() {
           ean={confirmScan.ean}
           quantity={confirmScan.quantity}
           onComplete={() => {
+            setIsScanBlocked(false);
             setConfirmScan(null);
             focusBarcodeInput();
           }}
+          onBlockingChange={setIsScanBlocked}
           productName={conference.products.find((p) => p.ean === confirmScan.ean)?.description}
         />
       )}

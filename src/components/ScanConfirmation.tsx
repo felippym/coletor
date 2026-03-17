@@ -11,12 +11,17 @@ interface ScanConfirmationProps {
   onComplete: () => void;
   /** Nome do produto (ex: da NFe) - evita consulta ao catálogo */
   productName?: string | null;
+  /** Chamado quando bloqueia/desbloqueia novos scans (ex: produto não listado por 3s) */
+  onBlockingChange?: (blocking: boolean) => void;
 }
 
-export function ScanConfirmation({ ean, quantity, onComplete, productName: productNameProp }: ScanConfirmationProps) {
+const NOT_LISTED_DURATION_MS = 5000;
+
+export function ScanConfirmation({ ean, quantity, onComplete, productName: productNameProp, onBlockingChange }: ScanConfirmationProps) {
   const [visible, setVisible] = useState(true);
   const [produtoNome, setProdutoNome] = useState<string | null>(productNameProp ?? null);
   const [loaded, setLoaded] = useState(!!productNameProp);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     if (productNameProp != null) {
@@ -41,12 +46,32 @@ export function ScanConfirmation({ ean, quantity, onComplete, productName: produ
 
   useEffect(() => {
     if (!loaded) return;
+    const notInNfe = produtoNome?.trim() === "Produto não listado na NFe";
+    const duration = notInNfe ? NOT_LISTED_DURATION_MS : 600;
+
+    if (notInNfe) onBlockingChange?.(true);
+
+    let count = 5;
+    if (notInNfe) setCountdown(5);
+    const interval = notInNfe
+      ? setInterval(() => {
+          count -= 1;
+          setCountdown(count);
+        }, 1000)
+      : null;
+
     const timer = setTimeout(() => {
+      if (notInNfe) onBlockingChange?.(false);
       setVisible(false);
       setTimeout(onComplete, 300);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [loaded, onComplete]);
+    }, duration);
+
+    return () => {
+      clearTimeout(timer);
+      if (interval) clearInterval(interval);
+      if (notInNfe) onBlockingChange?.(false);
+    };
+  }, [loaded, produtoNome, onComplete, onBlockingChange]);
 
   const notInNfe = produtoNome?.trim() === "Produto não listado na NFe";
   const cadastrado = !!produtoNome?.trim() && !notInNfe;
@@ -70,6 +95,9 @@ export function ScanConfirmation({ ean, quantity, onComplete, productName: produ
         )}
         {notInNfe ? "Produto não listado!" : "Escaneado!"}
       </div>
+      {notInNfe && countdown !== null && (
+        <div className="mt-2 text-4xl font-bold tabular-nums">{countdown}</div>
+      )}
       <div className="mt-2 text-lg font-medium">{produtoNome?.trim() || "NÃO CADASTRADO"}</div>
       <div className="mt-0.5 font-mono text-sm opacity-90">{ean}</div>
       <div className="mt-1 text-sm opacity-90">Quantidade: {quantity}</div>
