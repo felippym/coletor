@@ -164,9 +164,13 @@ export default function NFeConferencePage() {
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
   }, []);
 
+  const lastFocusedConferenceIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (conference) focusBarcodeInput();
-  }, [conference, focusBarcodeInput]);
+    if (conference && lastFocusedConferenceIdRef.current !== id) {
+      lastFocusedConferenceIdRef.current = id;
+      focusBarcodeInput();
+    }
+  }, [id, conference, focusBarcodeInput]);
 
   if (!conference) {
     return <SkeletonDetailPage />;
