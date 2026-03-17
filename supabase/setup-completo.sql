@@ -55,6 +55,12 @@ create table if not exists public.nfe_conferences (
   observation text
 );
 
+-- Colunas adicionadas em migrações posteriores
+alter table public.nfe_conferences add column if not exists started_by text;
+alter table public.nfe_conferences add column if not exists supplier_cnpj text;
+alter table public.nfe_conferences add column if not exists dest_razao_social text;
+alter table public.nfe_conferences add column if not exists dest_cnpj text;
+
 alter table public.nfe_conferences enable row level security;
 
 drop policy if exists "Allow all for nfe_conferences" on public.nfe_conferences;

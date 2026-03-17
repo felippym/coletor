@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileText, KeyRound, List } from "lucide-react";
@@ -19,6 +19,13 @@ export default function NFeImportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [error]);
 
   const chaveDigits = chave.replace(/\D/g, "");
   const isValidChave = chaveDigits.length === 44;
@@ -182,8 +189,18 @@ export default function NFeImportPage() {
           )}
 
           {error && (
-            <div className="rounded-xl border-2 border-[var(--destructive)]/30 bg-[var(--destructive)]/10 px-4 py-3 text-sm text-[var(--destructive)]">
-              {error}
+            <div
+              ref={errorRef}
+              role="alert"
+              className="rounded-xl border-2 border-[var(--destructive)]/50 bg-[var(--destructive)]/15 px-4 py-4 text-sm"
+            >
+              <p className="font-semibold text-[var(--destructive)]">Erro ao consultar</p>
+              <p className="mt-1.5 max-h-32 overflow-y-auto break-words text-[var(--foreground)]">{error}</p>
+              {error.includes("dest_cnpj") || error.includes("schema cache") ? (
+                <p className="mt-2 text-xs text-[var(--secondary)]">
+                  Execute a migração no Supabase: <code className="rounded bg-[var(--surface)] px-1 py-0.5">npm run db:migrate:nfe:open</code>
+                </p>
+              ) : null}
             </div>
           )}
 
