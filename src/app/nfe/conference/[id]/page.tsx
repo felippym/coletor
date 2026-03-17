@@ -421,7 +421,7 @@ export default function NFeConferencePage() {
                                   setCopiedEan(product.ean);
                                   setTimeout(() => setCopiedEan(null), 2000);
                                 }}
-                                className="flex items-center gap-1.5 font-mono text-xs text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                                className="flex items-center gap-1.5 font-mono text-[13px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
                                 title={copiedEan === product.ean ? "Copiado" : "Copiar EAN"}
                               >
                                 {product.ean}
