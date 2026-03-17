@@ -3,13 +3,14 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera, FileDown } from "lucide-react";
+import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera, FileDown, Trash2 } from "lucide-react";
 import { getNFeConference, saveNFeConference } from "@/lib/nfe-storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { ObservationField } from "@/components/ObservationField";
+import { useAuth } from "@/components/AuthProvider";
 import { generateConferencePdf } from "@/lib/generate-conference-pdf";
 import { SkeletonDetailPage } from "@/components/Skeleton";
 import type { NFeConference, NFeProduct } from "@/types/nfe";
@@ -31,6 +32,7 @@ function formatDate(iso: string) {
 export default function NFeConferencePage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const id = params.id as string;
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -38,6 +40,7 @@ export default function NFeConferencePage() {
   const [search, setSearch] = useState("");
   const [confirmScan, setConfirmScan] = useState<{ ean: string; quantity: number } | null>(null);
   const [decreaseTarget, setDecreaseTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
+  const [deleteProductTarget, setDeleteProductTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -101,6 +104,17 @@ export default function NFeConferencePage() {
       const idx = conference.products.findIndex((_, i) => i === index);
       if (idx < 0) return;
       products[idx] = { ...products[idx], ...updates };
+      const updated = { ...conference, products };
+      setConference(updated);
+      void saveNFeConference(updated);
+    },
+    [conference]
+  );
+
+  const removeProduct = useCallback(
+    (index: number) => {
+      if (!conference) return;
+      const products = conference.products.filter((_, i) => i !== index);
       const updated = { ...conference, products };
       setConference(updated);
       void saveNFeConference(updated);
@@ -324,18 +338,30 @@ export default function NFeConferencePage() {
                               <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
                             </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              product.countedQty > 0 &&
-                              setDecreaseTarget({ originalIndex, product })
-                            }
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
-                            disabled={product.countedQty <= 0}
-                            aria-label="Diminuir quantidade"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                product.countedQty > 0 &&
+                                setDecreaseTarget({ originalIndex, product })
+                              }
+                              className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)] disabled:opacity-40 disabled:pointer-events-none"
+                              disabled={product.countedQty <= 0}
+                              aria-label="Diminuir quantidade"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            {user === "admin" && (
+                              <button
+                                type="button"
+                                onClick={() => setDeleteProductTarget({ originalIndex, product })}
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]"
+                                aria-label="Excluir produto"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                           <span className="text-[var(--muted)]">
@@ -407,6 +433,27 @@ export default function NFeConferencePage() {
         }
         confirmLabel="Remover"
         loadingLabel="Removendo..."
+      />
+
+      <ConfirmDeleteDrawer
+        isOpen={!!deleteProductTarget}
+        onClose={() => {
+          setDeleteProductTarget(null);
+          focusBarcodeInput();
+        }}
+        onConfirm={() => {
+          if (deleteProductTarget) {
+            removeProduct(deleteProductTarget.originalIndex);
+          }
+        }}
+        title="Excluir produto da conferência?"
+        message={
+          deleteProductTarget
+            ? `"${deleteProductTarget.product.description}" (${deleteProductTarget.product.ean}) — O produto será removido da lista.`
+            : undefined
+        }
+        confirmLabel="Excluir"
+        loadingLabel="Excluindo..."
       />
 
       {showFinishModal && (
