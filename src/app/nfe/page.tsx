@@ -8,7 +8,6 @@ import {
   createNFeConferenceFromInvoice,
   saveNFeConference,
 } from "@/lib/nfe-storage";
-import { StartConferenceDrawer } from "@/components/StartConferenceDrawer";
 import type { NFeInvoice } from "@/types/nfe";
 
 export default function NFeImportPage() {
@@ -18,7 +17,6 @@ export default function NFeImportPage() {
   const [xml, setXml] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDrawer, setShowDrawer] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +29,7 @@ export default function NFeImportPage() {
   const isValidChave = chaveDigits.length === 44;
   const hasXml = xml.trim().length > 100;
 
-  const handleConsult = async (employeeName: string) => {
+  const handleConsult = async () => {
     setError(null);
     setLoading(true);
 
@@ -57,13 +55,12 @@ export default function NFeImportPage() {
       }
 
       const invoice = data as NFeInvoice;
-      const conference = createNFeConferenceFromInvoice(invoice, employeeName);
+      const conference = createNFeConferenceFromInvoice(invoice);
       await saveNFeConference(conference);
       router.push(`/nfe/conference/${conference.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar");
       setLoading(false);
-      throw err;
     }
   };
 
@@ -205,21 +202,21 @@ export default function NFeImportPage() {
           )}
 
           <button
-            onClick={() => setShowDrawer(true)}
+            onClick={() => handleConsult()}
             disabled={!canSubmit || loading}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary)] font-semibold text-[var(--primary-foreground)] transition-all duration-200 hover:bg-[var(--primary-hover)] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
           >
-            Consultar e Conferir
+            {loading ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--primary-foreground)] border-t-transparent" />
+                Consultando...
+              </>
+            ) : (
+              "Consultar e Conferir"
+            )}
           </button>
         </div>
       </main>
-
-      <StartConferenceDrawer
-        isOpen={showDrawer}
-        onClose={() => setShowDrawer(false)}
-        onConfirm={handleConsult}
-        isLoading={loading}
-      />
     </div>
   );
 }

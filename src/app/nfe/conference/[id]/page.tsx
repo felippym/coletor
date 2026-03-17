@@ -9,6 +9,7 @@ import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
+import { StartConferenceDrawer } from "@/components/StartConferenceDrawer";
 import { ObservationField } from "@/components/ObservationField";
 import { useAuth } from "@/components/AuthProvider";
 import { generateConferencePdf } from "@/lib/generate-conference-pdf";
@@ -41,7 +42,9 @@ export default function NFeConferencePage() {
   const [confirmScan, setConfirmScan] = useState<{ ean: string; quantity: number } | null>(null);
   const [decreaseTarget, setDecreaseTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
   const [deleteProductTarget, setDeleteProductTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
+  const [showFinishDrawer, setShowFinishDrawer] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [finishDrawerLoading, setFinishDrawerLoading] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
 
@@ -128,8 +131,29 @@ export default function NFeConferencePage() {
   }, [conference]);
 
   const handleFinish = useCallback(() => {
-    setShowFinishModal(true);
-  }, []);
+    if (conference?.startedBy?.trim()) {
+      setShowFinishModal(true);
+    } else {
+      setShowFinishDrawer(true);
+    }
+  }, [conference?.startedBy]);
+
+  const handleFinishDrawerConfirm = useCallback(
+    async (employeeName: string) => {
+      if (!conference) return;
+      setFinishDrawerLoading(true);
+      try {
+        const updated = { ...conference, startedBy: employeeName.trim() };
+        setConference(updated);
+        await saveNFeConference(updated);
+        setShowFinishDrawer(false);
+        setShowFinishModal(true);
+      } finally {
+        setFinishDrawerLoading(false);
+      }
+    },
+    [conference]
+  );
 
   const handleCloseFinishModal = useCallback(() => {
     setShowFinishModal(false);
@@ -454,6 +478,16 @@ export default function NFeConferencePage() {
         }
         confirmLabel="Excluir"
         loadingLabel="Excluindo..."
+      />
+
+      <StartConferenceDrawer
+        isOpen={showFinishDrawer}
+        onClose={() => setShowFinishDrawer(false)}
+        onConfirm={handleFinishDrawerConfirm}
+        isLoading={finishDrawerLoading}
+        title="Digite o seu nome"
+        confirmLabel="Confirmar e Finalizar"
+        loadingLabel="Finalizando..."
       />
 
       {showFinishModal && (

@@ -7,6 +7,9 @@ interface StartConferenceDrawerProps {
   onClose: () => void;
   onConfirm: (employeeName: string) => void | Promise<void>;
   isLoading?: boolean;
+  title?: string;
+  confirmLabel?: string;
+  loadingLabel?: string;
 }
 
 export function StartConferenceDrawer({
@@ -14,6 +17,9 @@ export function StartConferenceDrawer({
   onClose,
   onConfirm,
   isLoading = false,
+  title = "Digite o seu nome",
+  confirmLabel = "Confirmar e Consultar",
+  loadingLabel = "Consultando...",
 }: StartConferenceDrawerProps) {
   const [name, setName] = useState("");
   const [isVisible, setIsVisible] = useState(false);
@@ -92,7 +98,7 @@ export function StartConferenceDrawer({
       >
         <div className="absolute left-1/2 top-3 h-1 w-12 -translate-x-1/2 rounded-full bg-[var(--muted)]" />
         <h2 className="mb-4 mt-2 text-xl font-semibold text-[var(--foreground)]">
-          Digite o seu nome
+          {title}
         </h2>
         <form onSubmit={handleSubmit}>
           <input
@@ -113,10 +119,10 @@ export function StartConferenceDrawer({
               {isLoading ? (
                 <>
                   <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--primary-foreground)] border-t-transparent" />
-                  Consultando...
+                  {loadingLabel}
                 </>
               ) : (
-                "Confirmar e Consultar"
+                confirmLabel
               )}
             </button>
         </form>
