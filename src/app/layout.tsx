@@ -31,6 +31,7 @@ export const metadata: Metadata = {
     title: "Inventário de Loja",
   },
   icons: {
+    icon: "/logo.png",
     apple: "/logo.png",
   },
   other: {
