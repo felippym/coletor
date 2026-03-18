@@ -35,7 +35,7 @@ function formatDate(iso: string) {
 async function loadLogoBase64(): Promise<string | null> {
   try {
     const base = typeof window !== "undefined" ? window.location.origin : "";
-    const res = await fetch(`${base}/logo.png`);
+    const res = await fetch(`${base}/logo-pdf.png`);
     if (!res.ok) return null;
     const blob = await res.blob();
     return new Promise((resolve, reject) => {
