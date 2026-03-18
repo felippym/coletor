@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
-import { FileText, Clock, Package, MessageSquare, Trash2, User, ChevronDown, ChevronUp, Filter, RotateCcw } from "lucide-react";
+import { FileText, Clock, Package, MessageSquare, Trash2, User, ChevronDown, ChevronUp, Filter, RotateCcw, Copy } from "lucide-react";
 import { getNFeConferences, getNFeConference, saveNFeConference, deleteNFeConference } from "@/lib/nfe-storage";
 import { useAuth } from "@/components/AuthProvider";
 import { SkeletonCardList } from "@/components/Skeleton";
@@ -70,7 +70,16 @@ export default function NFeConferencesPage() {
   const [filterCreatedBy, setFilterCreatedBy] = useState<string | "todos">("todos");
   const [filterSearch, setFilterSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const filtersRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyNumber = (e: React.MouseEvent, id: string, invoiceNumber: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(`Nº ${invoiceNumber}`);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     if (!showFilters) return;
@@ -398,7 +407,22 @@ export default function NFeConferencesPage() {
                           <Clock className="h-3.5 w-3.5 shrink-0" />
                           <span>{formattedDate}</span>
                           <span className="text-[var(--border)]">•</span>
-                          <span>Nº {conf.invoiceNumber}</span>
+                          <span className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => handleCopyNumber(e, conf.id, conf.invoiceNumber)}
+                              className="flex items-center gap-1 font-mono text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                              title={copiedId === conf.id ? "Copiado" : "Copiar"}
+                            >
+                              Nº {conf.invoiceNumber}
+                              <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+                            </button>
+                            {copiedId === conf.id && (
+                              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400" title="Copiado">
+                                Copiado
+                              </span>
+                            )}
+                          </span>
                         </div>
 
                         {/* Linha 3: Produtos + Itens + Usuário + Delete */}
