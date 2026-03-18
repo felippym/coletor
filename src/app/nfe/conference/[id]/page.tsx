@@ -355,7 +355,7 @@ export default function NFeConferencePage() {
                 <Camera className="h-5 w-5" />
               </button>
               <button
-                onClick={() => generateConferencePdf(conference)}
+                onClick={() => generateConferencePdf(conference).catch(console.error)}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] transition-all duration-200 hover:bg-[var(--surface-hover)] active:scale-[0.98]"
                 aria-label="Gerar PDF"
                 title="Gerar PDF"
