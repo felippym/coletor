@@ -19,6 +19,7 @@
     "db:migrate:product-review-status": "node scripts/run-product-review-status-migration.js",
     "db:migrate:funcionarios": "node scripts/run-funcionarios-migration.js",
     "db:migrate:funcionarios-responsavel": "node scripts/run-funcionarios-responsavel-migration.js",
+    "db:migrate:inventories-funcionario": "node scripts/run-inventories-funcionario-migration.js",
     "seed:fiscal": "node scripts/seed-fiscal-supabase.js",
     "auth:env": "node scripts/print-auth-hashes-env.js",
     "icon:generate": "node scripts/generate-app-icon.js",

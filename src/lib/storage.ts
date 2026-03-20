@@ -40,6 +40,7 @@ function rowToInventory(row: Record<string, unknown>): Inventory {
     status: row.status ?? "em_contagem",
     observation: row.observation ?? undefined,
     createdBy: row.created_by as string | undefined,
+    funcionario: (row.funcionario as string | null | undefined)?.trim() || undefined,
   } as Record<string, unknown>);
 }
 
@@ -83,6 +84,7 @@ export async function saveInventory(inventory: Inventory): Promise<void> {
           status: inventory.status ?? "em_contagem",
           observation: inventory.observation ?? null,
           created_by: inventory.createdBy ?? null,
+          funcionario: inventory.funcionario?.trim() || null,
         },
         { onConflict: "id" }
       );
@@ -112,6 +114,7 @@ export async function getInventory(id: string): Promise<Inventory | null> {
           status: data.status ?? "em_contagem",
           observation: data.observation ?? undefined,
           createdBy: data.created_by as string | undefined,
+          funcionario: (data.funcionario as string | null | undefined)?.trim() || undefined,
         } as Record<string, unknown>);
       }
       if (error && error.code !== "PGRST116") console.error("[Supabase] getInventory:", error.message);

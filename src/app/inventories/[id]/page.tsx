@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Trash2, Minus, Plus, Clock, Package, Box } from "lucide-react";
+import { Trash2, Minus, Plus, Clock, Package, Box, UserRound } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { shareTxt } from "@/lib/export";
@@ -243,6 +243,17 @@ export default function InventoryDetailsPage() {
               <span className="font-medium text-[var(--foreground)]">{totalQty}</span>
               <span>itens</span>
             </span>
+            {inventory.funcionario ? (
+              <>
+                <span className="shrink-0 text-[var(--border)]" aria-hidden>•</span>
+                <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+                  <UserRound className="h-4 w-4 shrink-0" />
+                  <span className="max-w-[10rem] truncate font-medium text-[var(--foreground)]">
+                    {inventory.funcionario}
+                  </span>
+                </span>
+              </>
+            ) : null}
           </div>
 
           {/* Linha 4: Busca */}

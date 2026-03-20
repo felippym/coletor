@@ -564,7 +564,7 @@ export default function NFeConferencePage() {
         onClose={() => setShowFinishDrawer(false)}
         onConfirm={handleFinishDrawerConfirm}
         isLoading={finishDrawerLoading}
-        title="Digite o seu nome"
+        createdBy={user}
         confirmLabel="Confirmar e Finalizar"
         loadingLabel="Finalizando..."
       />

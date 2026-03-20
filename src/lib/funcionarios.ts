@@ -23,6 +23,11 @@ export function viewerFetchHeaders(viewer: string | null | undefined): HeadersIn
   return headers;
 }
 
+/**
+ * Regra global do app: **admin** vê todos os funcionários; **leblon** / **ipanema** (e demais logins de
+ * loja) veem apenas registros cujo `responsavel` coincide com o login. Usado na API (GET) e aqui no
+ * cliente como segunda camada (evita vazamento se a resposta vier incorreta).
+ */
 function filterRowsByViewer(rows: FuncionarioRow[], viewerUser: string | null): FuncionarioRow[] {
   const v = viewerUser?.trim().toLowerCase() ?? "";
   if (!v) return [];
@@ -169,7 +174,7 @@ function parseFuncionarioRows(data: unknown): FuncionarioRow[] {
   return out.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
-/** Lista com id (Supabase ou fallback local). Filtra por loja quando viewer não é admin. */
+/** Lista com id (Supabase ou fallback local). Sempre filtrada por loja quando o viewer não é admin. */
 export async function loadFuncionarioRows(viewerUser: string | null): Promise<FuncionarioRow[]> {
   try {
     const res = await fetch("/api/funcionarios", {
@@ -178,7 +183,10 @@ export async function loadFuncionarioRows(viewerUser: string | null): Promise<Fu
     });
     if (res.ok) {
       const data = (await res.json()) as unknown;
-      if (Array.isArray(data)) return parseFuncionarioRows(data);
+      if (Array.isArray(data)) {
+        const rows = parseFuncionarioRows(data);
+        return filterRowsByViewer(rows, viewerUser);
+      }
     }
   } catch {
     // fallback local

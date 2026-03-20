@@ -1,26 +1,11 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Camera,
-  ChevronDown,
-  ListTodo,
-  Repeat2,
-  Upload,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, Camera, ListTodo, Repeat2, Upload } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
-import { loadFuncionarioNames } from "@/lib/funcionarios";
+import { FuncionarioPicker, type FuncionarioPickerStats } from "@/components/FuncionarioPicker";
 import { compressImageFile, saveProductTicket } from "@/lib/product-tickets";
 import type { ProductTicket } from "@/types/product-ticket";
 
@@ -122,11 +107,10 @@ export default function RevisarProdutoPage() {
   const { user } = useAuth();
   const baseId = useId();
   const eanId = `${baseId}-ean`;
-  const funcionarioSelectId = `${baseId}-funcionario`;
+  const funcionarioFieldId = `${baseId}-funcionario`;
 
-  const [funcionarios, setFuncionarios] = useState<string[]>([]);
-  const [funcionariosLoading, setFuncionariosLoading] = useState(true);
   const [funcionario, setFuncionario] = useState("");
+  const [fp, setFp] = useState<FuncionarioPickerStats>({ loading: true, count: 0 });
 
   const [ean, setEan] = useState("");
   const [photoEan, setPhotoEan] = useState<string | null>(null);
@@ -134,21 +118,7 @@ export default function RevisarProdutoPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "err"; text: string } | null>(null);
 
-  const refreshFuncionarios = useCallback(async () => {
-    setFuncionariosLoading(true);
-    try {
-      setFuncionarios(await loadFuncionarioNames(user ?? null));
-    } finally {
-      setFuncionariosLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void refreshFuncionarios();
-  }, [refreshFuncionarios]);
-
-  const funcionarioOk =
-    funcionarios.length === 0 ? false : funcionario.trim().length > 0;
+  const funcionarioOk = fp.count === 0 ? false : funcionario.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +127,7 @@ export default function RevisarProdutoPage() {
       setMessage({
         type: "err",
         text:
-          funcionarios.length === 0
+          fp.count === 0
             ? "Cadastre pelo menos um funcionário em Usuários antes de registrar."
             : "Selecione o funcionário.",
       });
@@ -249,61 +219,16 @@ export default function RevisarProdutoPage() {
           <p className="text-xs text-[var(--muted)]">
             Campos marcados com <span className="text-red-400">*</span> são obrigatórios.
           </p>
-          <div className="space-y-2">
-            <label
-              htmlFor={funcionarioSelectId}
-              className="text-sm font-medium text-[var(--foreground)]"
-            >
-              Funcionário <span className="text-red-400" aria-hidden>*</span>
-            </label>
-            <p className="text-xs text-[var(--muted)]">
-              Quem está registrando este ticket.
-            </p>
-            <div className="relative">
-              <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
-              <select
-                id={funcionarioSelectId}
-                value={funcionario}
-                onChange={(ev) => setFuncionario(ev.target.value)}
-                disabled={saving || funcionariosLoading || funcionarios.length === 0}
-                required={funcionarios.length > 0 && !funcionariosLoading}
-                aria-required="true"
-                className="w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-10 pr-10 text-[var(--foreground)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">
-                  {funcionariosLoading
-                    ? "Carregando funcionários…"
-                    : funcionarios.length === 0
-                      ? "Nenhum funcionário cadastrado"
-                      : "Selecione o funcionário"}
-                </option>
-                {funcionarios.map((nome) => (
-                  <option key={nome} value={nome}>
-                    {nome}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
-            </div>
-            {!funcionariosLoading && funcionarios.length === 0 && (
-              <p className="text-xs text-amber-200/90">
-                {user === "admin" ? (
-                  <>
-                    Cadastre funcionários na tela{" "}
-                    <Link
-                      href="/users"
-                      className="font-medium text-[var(--accent)] underline underline-offset-2"
-                    >
-                      Usuários
-                    </Link>
-                    .
-                  </>
-                ) : (
-                  "Peça ao administrador para cadastrar os funcionários na tela Usuários."
-                )}
-              </p>
-            )}
-          </div>
+          <FuncionarioPicker
+            viewerUser={user}
+            fetchEnabled
+            value={funcionario}
+            onChange={setFuncionario}
+            fieldId={funcionarioFieldId}
+            description="Quem está registrando este ticket."
+            disabled={saving}
+            onStatsChange={setFp}
+          />
 
           <div className="space-y-2">
             <label htmlFor={eanId} className="text-sm font-medium text-[var(--foreground)]">

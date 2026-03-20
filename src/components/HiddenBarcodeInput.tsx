@@ -18,10 +18,21 @@ export function HiddenBarcodeInput({ onScan, disabled }: HiddenBarcodeInputProps
     const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     if (isTouchDevice) return;
 
-    const focusInput = () => {
-      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
-        return;
+    const shouldNotStealFocus = () => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el || el === document.body) return false;
+      const tag = el.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON") {
+        return true;
       }
+      if (el.isContentEditable) return true;
+      if (el.closest("[data-suppress-barcode-focus]")) return true;
+      if (el.closest('[role="dialog"]')) return true;
+      return false;
+    };
+
+    const focusInput = () => {
+      if (shouldNotStealFocus()) return;
       input.focus();
     };
     focusInput();

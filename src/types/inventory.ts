@@ -14,4 +14,6 @@ export interface Inventory {
   observation?: string;
   /** Usuário que criou (ipanema, leblon, admin) - visível apenas para criador + admin */
   createdBy?: string;
+  /** Funcionário que está realizando a contagem (cadastro em Usuários) */
+  funcionario?: string;
 }

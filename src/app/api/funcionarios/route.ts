@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     return NextResponse.json([]);
   }
   try {
+    // Admin: todos. Loja (ex.: leblon, ipanema): só funcionários com responsavel = login da sessão.
     let q = supabase.from("funcionarios").select("id, nome, responsavel").order("nome");
     if (viewer !== "admin") {
       q = q.eq("responsavel", viewer);

@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Plus, Clock, Package, Box, Camera } from "lucide-react";
+import { Minus, Plus, Clock, Package, Box, Camera, UserRound } from "lucide-react";
 import { getInventory, saveInventory } from "@/lib/storage";
 import type { InventoryStatus } from "@/types/inventory";
 
@@ -301,6 +301,17 @@ export default function InventoryScanPage() {
               <span className="font-medium text-[var(--foreground)]">{totalItems}</span>
               <span>itens</span>
             </span>
+            {inventory.funcionario ? (
+              <>
+                <span className="shrink-0 text-[var(--border)]" aria-hidden>•</span>
+                <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+                  <UserRound className="h-4 w-4 shrink-0" />
+                  <span className="max-w-[10rem] truncate font-medium text-[var(--foreground)]">
+                    {inventory.funcionario}
+                  </span>
+                </span>
+              </>
+            ) : null}
           </div>
         </div>
       </header>
