@@ -3,11 +3,10 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { Package, Trash2, Clock, AlertTriangle, MessageSquare, Filter, ChevronDown, ChevronUp, RotateCcw, User } from "lucide-react";
-import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
+import { getInventories, deleteInventory, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
-import { DeleteAllDrawer } from "@/components/DeleteAllDrawer";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
 import { SkeletonCardList } from "@/components/Skeleton";
 import type { Inventory, InventoryStatus } from "@/types/inventory";
@@ -29,7 +28,6 @@ export default function InventoriesPage() {
   const [loading, setLoading] = useState(true);
   const [produtoNames, setProdutoNames] = useState<Map<string, string>>(new Map());
   const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
-  const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [statusEditId, setStatusEditId] = useState<string | null>(null);
   const [showStartDrawer, setShowStartDrawer] = useState(false);
   const [filterStatus, setFilterStatus] = useState<InventoryStatus | "todos">("todos");
@@ -113,11 +111,6 @@ export default function InventoriesPage() {
     await deleteInventory(deleteTarget.id);
     setInventories((prev) => prev.filter((i) => i.id !== deleteTarget.id));
     setDeleteTarget(null);
-  };
-
-  const handleConfirmDeleteAll = async () => {
-    await deleteAllInventories();
-    setInventories([]);
   };
 
   const handleStatusChange = async (inv: Inventory, newStatus: InventoryStatus) => {
@@ -205,14 +198,6 @@ export default function InventoriesPage() {
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   Limpar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteAll(true)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--destructive)]/50 bg-[var(--destructive)]/10 px-2.5 py-1.5 text-xs font-medium text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Deletar todos
                 </button>
               </div>
               {showFilters && (
@@ -450,11 +435,6 @@ export default function InventoriesPage() {
         onConfirm={handleConfirmDelete}
         title="Excluir inventário?"
         message={deleteTarget ? `"${deleteTarget.name}" será excluído permanentemente. Esta ação não pode ser desfeita.` : undefined}
-      />
-      <DeleteAllDrawer
-        isOpen={showDeleteAll}
-        onClose={() => setShowDeleteAll(false)}
-        onConfirm={handleConfirmDeleteAll}
       />
       <StartInventoryDrawer
         isOpen={showStartDrawer}

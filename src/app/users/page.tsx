@@ -261,13 +261,7 @@ export default function UsersPage() {
               <Users className="h-4 w-4" />
               Funcionários
             </h2>
-            <p className="mb-4 text-xs text-[var(--muted)]">
-              Aqui serão registrados os funcionários que irão realizar ações no app. Cada um fica vinculado a um{" "}
-              <span className="font-medium text-[var(--foreground)]">login (loja)</span> — por exemplo Carina para
-              leblon, Felipe para ipanema.               No Revisar Produto, ao iniciar inventário e ao finalizar conferência NF-e, cada loja só vê os seus funcionários. Você pode alterar o usuário responsável
-              pelo menu ao lado de cada nome. Dados no Supabase (fallback: navegador se a API falhar).
-            </p>
-            <form onSubmit={handleAddFuncionario} className="flex flex-col gap-3">
+            <form onSubmit={handleAddFuncionario} className="mt-3 flex flex-col gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="min-w-0 space-y-1">
                   <label htmlFor="novo-funcionario-nome" className="block text-xs font-medium text-[var(--muted)]">

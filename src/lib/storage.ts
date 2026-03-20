@@ -139,20 +139,3 @@ export async function deleteInventory(id: string): Promise<void> {
   const inventories = getFromLocalStorage().filter((i) => i.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(inventories));
 }
-
-export async function deleteAllInventories(): Promise<void> {
-  const supabase = getSupabase();
-  if (isSupabaseConfigured() && supabase) {
-    try {
-      const { data } = await supabase.from("inventories").select("id");
-      if (data && data.length > 0) {
-        for (const row of data) {
-          await supabase.from("inventories").delete().eq("id", row.id);
-        }
-      }
-    } catch (err) {
-      console.error("[Supabase] deleteAllInventories error:", err);
-    }
-  }
-  localStorage.setItem(STORAGE_KEY, "[]");
-}
