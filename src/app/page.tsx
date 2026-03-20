@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Users, FileText, List, Package, FileSearch } from "lucide-react";
+import { Plus, Users, FileText, List, Package, FileSearch, Repeat2 } from "lucide-react";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -32,6 +32,12 @@ const actionButtons = [
     label: "Consulta Fiscal",
     href: "/fiscal/consulta",
     icon: FileSearch,
+  },
+  {
+    id: "revisar-produto",
+    label: "Revisar Produto",
+    href: "/revisar-produto",
+    icon: Repeat2,
   },
   {
     id: "conferencias",
@@ -77,8 +83,11 @@ export default function Home() {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Inventário de Loja
+              Plataforma de Gestão
             </h1>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-[var(--muted)]">
+              Desenvolvida com carinho para tornar o dia a dia mais simples.
+            </p>
           </div>
         </div>
 

@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
-import { UserPlus, Trash2, KeyRound } from "lucide-react";
+import {
+  addFuncionario,
+  loadFuncionarioRows,
+  removeFuncionario,
+  updateFuncionarioResponsavel,
+  type FuncionarioRow,
+} from "@/lib/funcionarios";
+import { UserPlus, Trash2, KeyRound, Users, Plus } from "lucide-react";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { SkeletonUserList } from "@/components/Skeleton";
 
@@ -26,6 +33,33 @@ export default function UsersPage() {
   const [editPasswordId, setEditPasswordId] = useState<string | null>(null);
   const [editPassword, setEditPassword] = useState("");
   const [updating, setUpdating] = useState(false);
+
+  const [funcionarios, setFuncionarios] = useState<FuncionarioRow[]>([]);
+  const [funcionariosLoading, setFuncionariosLoading] = useState(true);
+  const [novoFuncionario, setNovoFuncionario] = useState("");
+  const [funcionarioResponsavel, setFuncionarioResponsavel] = useState("");
+  const [funcionarioError, setFuncionarioError] = useState<string | null>(null);
+  const [funcionarioUpdatingId, setFuncionarioUpdatingId] = useState<string | null>(null);
+
+  const refreshFuncionarios = useCallback(async () => {
+    setFuncionariosLoading(true);
+    try {
+      setFuncionarios(await loadFuncionarioRows(user ?? null));
+    } finally {
+      setFuncionariosLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void refreshFuncionarios();
+  }, [refreshFuncionarios]);
+
+  useEffect(() => {
+    if (!loading && users.length > 0 && !funcionarioResponsavel) {
+      const preferred = users.find((u) => u.username !== "admin") ?? users[0];
+      setFuncionarioResponsavel(preferred.username);
+    }
+  }, [loading, users, funcionarioResponsavel]);
 
   const fetchUsers = async () => {
     setFetchError(null);
@@ -94,6 +128,34 @@ export default function UsersPage() {
     } finally {
       setDeleteTarget(null);
     }
+  };
+
+  const handleAddFuncionario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFuncionarioError(null);
+    if (!funcionarioResponsavel.trim()) {
+      setFuncionarioError("Selecione o usuário (loja) responsável.");
+      return;
+    }
+    const result = await addFuncionario(novoFuncionario, funcionarioResponsavel);
+    if (result.ok) {
+      setNovoFuncionario("");
+      await refreshFuncionarios();
+      return;
+    }
+    if (result.error === "empty") {
+      setFuncionarioError("Informe o nome.");
+      return;
+    }
+    if (result.error === "empty_responsavel") {
+      setFuncionarioError("Selecione o usuário (loja) responsável.");
+      return;
+    }
+    if (result.error === "duplicate") {
+      setFuncionarioError("Já existe um funcionário com esse nome para esse usuário/loja.");
+      return;
+    }
+    setFuncionarioError("Não foi possível salvar. Verifique a conexão e o Supabase.");
   };
 
   const handleUpdatePassword = async (id: string) => {
@@ -193,6 +255,159 @@ export default function UsersPage() {
               <p className="mt-2 text-sm text-[var(--destructive)]">{createError}</p>
             )}
           </form>
+
+          <section className="rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] p-4">
+            <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
+              <Users className="h-4 w-4" />
+              Funcionários
+            </h2>
+            <p className="mb-4 text-xs text-[var(--muted)]">
+              Aqui serão registrados os funcionários que irão realizar ações no app. Cada um fica vinculado a um{" "}
+              <span className="font-medium text-[var(--foreground)]">login (loja)</span> — por exemplo Carina para
+              leblon, Felipe para ipanema.               No Revisar Produto, cada loja só vê os seus funcionários. Você pode alterar o usuário responsável
+              pelo menu ao lado de cada nome. Dados no Supabase (fallback: navegador se a API falhar).
+            </p>
+            <form onSubmit={handleAddFuncionario} className="flex flex-col gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="min-w-0 space-y-1">
+                  <label htmlFor="novo-funcionario-nome" className="block text-xs font-medium text-[var(--muted)]">
+                    Novo funcionário
+                  </label>
+                  <input
+                    id="novo-funcionario-nome"
+                    type="text"
+                    value={novoFuncionario}
+                    onChange={(e) => {
+                      setNovoFuncionario(e.target.value);
+                      setFuncionarioError(null);
+                    }}
+                    placeholder="Nome completo ou apelido"
+                    className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <label
+                    htmlFor="funcionario-responsavel"
+                    className="block text-xs font-medium text-[var(--muted)]"
+                  >
+                    Usuário responsável (loja)
+                  </label>
+                  <select
+                    id="funcionario-responsavel"
+                    value={funcionarioResponsavel}
+                    onChange={(e) => {
+                      setFuncionarioResponsavel(e.target.value);
+                      setFuncionarioError(null);
+                    }}
+                    disabled={loading || users.length === 0}
+                    className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] disabled:opacity-50"
+                  >
+                    {users.length === 0 ? (
+                      <option value="">Carregue os logins acima</option>
+                    ) : (
+                      [...users]
+                        .sort((a, b) => a.username.localeCompare(b.username))
+                        .map((u) => (
+                          <option key={u.id} value={u.username}>
+                            {u.username}
+                          </option>
+                        ))
+                    )}
+                  </select>
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={loading || users.length === 0}
+                className="flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] disabled:opacity-50 sm:w-auto"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar
+              </button>
+            </form>
+            {funcionarioError && (
+              <p className="mt-2 text-sm text-[var(--destructive)]" role="status">
+                {funcionarioError}
+              </p>
+            )}
+            {funcionariosLoading ? (
+              <p className="mt-4 text-sm text-[var(--muted)]">Carregando funcionários…</p>
+            ) : funcionarios.length > 0 ? (
+              <ul className="mt-4 space-y-2 border-t border-[var(--border)] pt-4">
+                {funcionarios.map((row) => (
+                  <li
+                    key={row.id}
+                    className="flex flex-col gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)] sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                  >
+                    <span className="min-w-0 shrink-0 font-medium sm:max-w-[40%] sm:truncate">
+                      {row.nome}
+                    </span>
+                    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                      <div className="min-w-0 flex-1 sm:max-w-xs">
+                        <label className="sr-only" htmlFor={`funcionario-resp-${row.id}`}>
+                          Usuário responsável por {row.nome}
+                        </label>
+                        <select
+                          id={`funcionario-resp-${row.id}`}
+                          value={row.responsavel}
+                          disabled={
+                            funcionarioUpdatingId === row.id || loading || users.length === 0
+                          }
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            if (next === row.responsavel) return;
+                            void (async () => {
+                              setFuncionarioUpdatingId(row.id);
+                              setFuncionarioError(null);
+                              const result = await updateFuncionarioResponsavel(row.id, next);
+                              await refreshFuncionarios();
+                              setFuncionarioUpdatingId(null);
+                              if (!result.ok) {
+                                if (result.error === "duplicate") {
+                                  setFuncionarioError(
+                                    "Já existe um funcionário com esse nome para o usuário/loja selecionado.",
+                                  );
+                                } else {
+                                  setFuncionarioError("Não foi possível atualizar o responsável.");
+                                }
+                              }
+                            })();
+                          }}
+                          className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--foreground)] disabled:opacity-50 sm:text-sm"
+                        >
+                          {!users.some(
+                            (u) => u.username.toLowerCase() === row.responsavel.toLowerCase(),
+                          ) ? (
+                            <option value={row.responsavel}>{row.responsavel}</option>
+                          ) : null}
+                          {[...users]
+                            .sort((a, b) => a.username.localeCompare(b.username))
+                            .map((u) => (
+                              <option key={u.id} value={u.username}>
+                                {u.username}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void (async () => {
+                            await removeFuncionario(row.id);
+                            await refreshFuncionarios();
+                          })();
+                        }}
+                        className="shrink-0 rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]"
+                        aria-label={`Remover ${row.nome}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
 
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-[var(--foreground)]">

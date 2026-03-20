@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Inventário de Loja",
-    short_name: "Inventário",
+    name: "Plataforma de Gestão",
+    short_name: "Gestão",
     description: "Contagem de estoque com leitura de código de barras",
     start_url: "/",
     display: "standalone",

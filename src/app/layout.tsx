@@ -23,12 +23,12 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Inventário de Loja",
+  title: "Plataforma de Gestão",
   description: "Contagem de estoque com leitura de código de barras",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Inventário de Loja",
+    title: "Plataforma de Gestão",
   },
   icons: {
     icon: [
