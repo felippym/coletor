@@ -14,6 +14,8 @@
     "db:migrate:created-by:open": "node scripts/open-created-by-migration.js",
     "db:migrate:open": "node scripts/open-sql-editor.js",
     "seed:produtos": "node scripts/seed-produtos.js",
+    "db:migrate:fiscal": "node scripts/run-fiscal-migration.js",
+    "seed:fiscal": "node scripts/seed-fiscal-supabase.js",
     "auth:env": "node scripts/print-auth-hashes-env.js",
     "icon:generate": "node scripts/generate-app-icon.js",
     "logo:transparent": "node scripts/logo-transparent.js",

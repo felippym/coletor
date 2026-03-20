@@ -76,7 +76,7 @@ export default function NFeConferencesPage() {
   const handleCopyNumber = (e: React.MouseEvent, id: string, invoiceNumber: string) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(`Nº ${invoiceNumber}`);
+    navigator.clipboard.writeText(invoiceNumber);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };

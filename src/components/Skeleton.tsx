@@ -118,3 +118,54 @@ export function SkeletonCardList({ count = 4 }: { count?: number }) {
     </div>
   );
 }
+
+/** Um card no formato da consulta fiscal (produto / classificação / tributação) */
+export function SkeletonFiscalResultCard() {
+  const Section = ({
+    lines,
+  }: {
+    lines: { w: string }[];
+  }) => (
+    <section>
+      <div className="mb-2 flex items-center gap-2">
+        <Skeleton className="h-4 w-4 shrink-0 rounded" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <ul className="space-y-1.5">
+        {lines.map((line, i) => (
+          <li key={i} className="pl-4">
+            <Skeleton className={`h-3.5 ${line.w}`} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+
+  return (
+    <div
+      className="rounded-2xl border border-[var(--border)]/70 bg-[var(--surface)] p-5 shadow-sm"
+      aria-hidden
+    >
+      <div className="space-y-5">
+        <Section lines={[{ w: "w-40" }, { w: "w-full max-w-md" }]} />
+        <div className="h-px bg-[var(--border)]/60" />
+        <Section lines={[{ w: "w-32" }, { w: "w-28" }]} />
+        <div className="h-px bg-[var(--border)]/60" />
+        <Section
+          lines={[{ w: "w-16" }, { w: "w-full max-w-sm" }, { w: "w-12" }, { w: "w-10" }]}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Placeholder enquanto a busca fiscal carrega */
+export function SkeletonFiscalConsultResults({ count = 2 }: { count?: number }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <SkeletonFiscalResultCard key={i} />
+      ))}
+    </div>
+  );
+}

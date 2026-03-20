@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Users, FileText, List, Package } from "lucide-react";
+import { Plus, Users, FileText, List, Package, FileSearch } from "lucide-react";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -26,6 +26,12 @@ const actionButtons = [
     label: "Conferir NFe",
     href: "/nfe",
     icon: FileText,
+  },
+  {
+    id: "consulta-fiscal",
+    label: "Consulta Fiscal",
+    href: "/fiscal/consulta",
+    icon: FileSearch,
   },
   {
     id: "conferencias",
