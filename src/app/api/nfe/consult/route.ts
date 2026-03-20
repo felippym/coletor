@@ -4,37 +4,6 @@ import { fetchXmlByCert } from "@/lib/nfe-distribuicao";
 import { VIEWER_HEADER } from "@/lib/product-review-viewer";
 import type { NFeInvoice, NFeProduct } from "@/types/nfe";
 
-/** Mapeamento UF (2 primeiros dígitos da chave) para URL base SEFAZ de consulta pública */
-const UF_TO_SEFAZ_URL: Record<string, string> = {
-  "11": "https://www.sefaz.rr.gov.br",
-  "12": "https://www.sefaz.ac.gov.br",
-  "13": "https://www.sefaz.am.gov.br",
-  "14": "https://app.sefa.pa.gov.br",
-  "15": "https://app.sefa.pa.gov.br",
-  "16": "https://sefaz.ap.gov.br",
-  "17": "https://sefaz.to.gov.br",
-  "21": "https://app.sefa.ma.gov.br",
-  "22": "https://sefaz.pi.gov.br",
-  "23": "http://nfe.sefaz.ce.gov.br",
-  "24": "https://portal.rn.gov.br",
-  "25": "https://sefaz.pb.gov.br",
-  "26": "https://efisco.sefaz.pe.gov.br",
-  "27": "https://sefaz.al.gov.br",
-  "28": "https://sefaz.se.gov.br",
-  "29": "https://sefaz.ba.gov.br",
-  "31": "https://nfe.fazenda.mg.gov.br",
-  "32": "https://app.sefaz.es.gov.br",
-  "33": "https://nfe.fazenda.rj.gov.br",
-  "35": "https://nfe.fazenda.sp.gov.br",
-  "41": "https://www.sefa.pr.gov.br",
-  "42": "https://sat.sef.sc.gov.br",
-  "43": "https://nfe.sefaz.rs.gov.br",
-  "50": "https://nfe.sefaz.ms.gov.br",
-  "51": "https://nfe.sefaz.mt.gov.br",
-  "52": "http://nfe.sefaz.go.gov.br",
-  "53": "https://www.df.gov.br",
-};
-
 function parseNFeXml(xml: string): NFeInvoice | null {
   const parser = new XMLParser({
     ignoreAttributes: false,
@@ -110,41 +79,6 @@ function parseNFeXml(xml: string): NFeInvoice | null {
   };
 }
 
-async function fetchXmlByChave(chave: string): Promise<string | null> {
-  const uf = chave.substring(0, 2);
-  const baseUrl = UF_TO_SEFAZ_URL[uf];
-  if (!baseUrl) return null;
-
-  // A maioria dos portais SEFAZ exige certificado digital ou CAPTCHA.
-  // Tentamos URLs comuns de consulta; se falhar, o usuário deve colar o XML.
-  const urlsToTry = [
-    `${baseUrl}/nfce/web/modules/consultaConsumidor/consultaPublica.jsf`,
-    `${baseUrl}/nfeweb/sites/nfe/consulta-publica/principal`,
-    `${baseUrl}/portal/consultaPublica/consultaPublica.jsf`,
-  ];
-
-  for (const url of urlsToTry) {
-    try {
-      const res = await fetch(url, {
-        method: "GET",
-        headers: { Accept: "text/html,application/xhtml+xml" },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res.ok) {
-        const html = await res.text();
-        // Portais SEFAZ geralmente não retornam XML direto via GET simples.
-        // Retornamos null para indicar que o usuário deve colar o XML.
-        if (html.includes("chave") || html.includes("chaveNFe")) {
-          return null; // Página de formulário, não XML
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-}
-
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get("content-type") ?? "";
@@ -181,29 +115,19 @@ export async function POST(request: Request) {
       if ("xml" in certResult) {
         const invoice = parseNFeXml(certResult.xml);
         if (invoice) return NextResponse.json(invoice);
+        return NextResponse.json(
+          {
+            error:
+              "A SEFAZ retornou XML, mas não foi possível ler os dados da NFe. Tente colar o XML completo na aba XML.",
+          },
+          { status: 400 }
+        );
       }
       if ("error" in certResult) {
-        const msg = certResult.error;
-        if (
-          !msg.includes("não configurado") &&
-          !msg.includes("Certificado não configurado") &&
-          !msg.includes("não configurado no servidor")
-        ) {
-          return NextResponse.json({ error: msg }, { status: 400 });
-        }
+        // Sempre devolver o motivo real (certificado ausente, senha, cStat SEFAZ, etc.).
+        // O filtro antigo por "não configurado" escondia erros úteis e até mensagens da SEFAZ.
+        return NextResponse.json({ error: certResult.error }, { status: 400 });
       }
-      const fetchedXml = await fetchXmlByChave(chaveClean);
-      if (fetchedXml) {
-        const invoice = parseNFeXml(fetchedXml);
-        if (invoice) return NextResponse.json(invoice);
-      }
-      return NextResponse.json(
-        {
-          error:
-            "Não foi possível obter o XML pela chave. Login leblon ou ipanema com certificado configurado no servidor (veja .env.example), ou cole o XML da NFe.",
-        },
-        { status: 400 }
-      );
     }
 
     return NextResponse.json(
