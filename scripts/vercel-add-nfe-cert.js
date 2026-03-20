@@ -1,5 +1,5 @@
 /**
- * Adiciona NFE_CERT_BASE64 na Vercel (valor longo).
+ * Legado: NFE_CERT_BASE64 único. Preferir: npm run nfe:vercel:env (NFE_*_IPANEMA / LEBLON).
  * Uso: node scripts/vercel-add-nfe-cert.js
  */
 

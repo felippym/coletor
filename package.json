@@ -27,6 +27,7 @@
     "config:service-role": "node scripts/config-service-role.js",
     "nfe:cert": "node scripts/nfe-cert-to-base64.js",
     "nfe:env:ipanema": "node scripts/apply-nfe-ipanema-local.js",
+    "nfe:vercel:env": "node scripts/vercel-add-nfe-certs-by-store.js",
     "cosmos:debug-ncm": "node scripts/debug-cosmos-ncm.js"
   },
   "dependencies": {
