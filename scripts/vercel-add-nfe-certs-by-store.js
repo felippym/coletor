@@ -88,7 +88,7 @@ for (const key of KEYS) {
 
 if (n === 0) {
   console.error(
-    "Nenhuma variável NFE_*_IPANEMA / NFE_*_LEBLON encontrada em .env.local. Rode antes: npm run nfe:env:ipanema"
+    "Nenhuma variável NFE_*_IPANEMA / NFE_*_LEBLON em .env.local. Rode: npm run nfe:env:ipanema e/ou npm run nfe:env:leblon"
   );
   process.exit(1);
 }
