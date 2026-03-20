@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { APP_NAME } from "@/lib/app-brand";
 
 interface LoginOverlayProps {
   onLogin: (username: string, password: string) => Promise<boolean>;
@@ -40,9 +41,10 @@ export function LoginOverlay({ onLogin }: LoginOverlayProps) {
         <div className="mb-6 text-center">
           <img
             src="/logo.png"
-            alt="Cutelaria do ISAÍAS"
-            className="logo mx-auto mb-4 h-24 w-auto object-contain sm:h-28"
+            alt={APP_NAME}
+            className="logo mx-auto mb-3 h-24 w-auto object-contain sm:h-28"
           />
+          <h1 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">{APP_NAME}</h1>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

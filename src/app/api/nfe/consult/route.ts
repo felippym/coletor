@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { XMLParser } from "fast-xml-parser";
 import { fetchXmlByCert } from "@/lib/nfe-distribuicao";
+import { VIEWER_HEADER } from "@/lib/product-review-viewer";
 import type { NFeInvoice, NFeProduct } from "@/types/nfe";
 
 /** Mapeamento UF (2 primeiros dígitos da chave) para URL base SEFAZ de consulta pública */
@@ -147,16 +148,20 @@ async function fetchXmlByChave(chave: string): Promise<string | null> {
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get("content-type") ?? "";
-    let body: { chave?: string; xml?: string } = {};
+    let body: { chave?: string; xml?: string; viewerUser?: string } = {};
 
     if (contentType.includes("application/json")) {
-      body = (await request.json()) as { chave?: string; xml?: string };
+      body = (await request.json()) as { chave?: string; xml?: string; viewerUser?: string };
     } else if (contentType.includes("text/plain") || contentType.includes("application/xml") || contentType.includes("text/xml")) {
       const xml = await request.text();
       body = { xml };
     }
 
     const { chave, xml } = body;
+    const viewerUser =
+      typeof body.viewerUser === "string" && body.viewerUser.trim()
+        ? body.viewerUser.trim()
+        : request.headers.get(VIEWER_HEADER);
     const chaveClean = typeof chave === "string" ? chave.replace(/\D/g, "") : "";
     const xmlTrimmed = typeof xml === "string" ? xml.trim() : "";
 
@@ -172,14 +177,18 @@ export async function POST(request: Request) {
     }
 
     if (chaveClean.length === 44) {
-      const certResult = await fetchXmlByCert(chaveClean);
+      const certResult = await fetchXmlByCert(chaveClean, viewerUser);
       if ("xml" in certResult) {
         const invoice = parseNFeXml(certResult.xml);
         if (invoice) return NextResponse.json(invoice);
       }
       if ("error" in certResult) {
         const msg = certResult.error;
-        if (!msg.includes("não configurado") && !msg.includes("Certificado não configurado")) {
+        if (
+          !msg.includes("não configurado") &&
+          !msg.includes("Certificado não configurado") &&
+          !msg.includes("não configurado no servidor")
+        ) {
           return NextResponse.json({ error: msg }, { status: 400 });
         }
       }
@@ -191,7 +200,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Não foi possível obter o XML pela chave. Configure NFE_CERT_BASE64, NFE_CERT_PASSWORD e NFE_CNPJ para usar certificado digital, ou cole o XML da NFe no campo de texto.",
+            "Não foi possível obter o XML pela chave. Login leblon ou ipanema com certificado configurado no servidor (veja .env.example), ou cole o XML da NFe.",
         },
         { status: 400 }
       );

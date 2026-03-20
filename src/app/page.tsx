@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Users, FileText, List, Package, FileSearch, Repeat2 } from "lucide-react";
 import { StartInventoryDrawer } from "@/components/StartInventoryDrawer";
 import { useAuth } from "@/components/AuthProvider";
+import { APP_NAME } from "@/lib/app-brand";
 
 const actionButtons = [
   {
@@ -77,14 +78,12 @@ export default function Home() {
           <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--primary)] bg-[var(--surface)] p-3">
             <img
               src="/logo.png"
-              alt="Cutelaria do ISAÍAS"
+              alt={APP_NAME}
               className="logo h-full w-full object-contain"
             />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-              Plataforma de Gestão
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">{APP_NAME}</h1>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-[var(--muted)]">
               Desenvolvida com carinho para tornar o dia a dia mais simples.
             </p>

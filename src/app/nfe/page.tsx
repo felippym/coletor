@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileText, KeyRound, List } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import { VIEWER_HEADER } from "@/lib/product-review-viewer";
 import {
   createNFeConferenceFromInvoice,
   saveNFeConference,
@@ -38,12 +39,15 @@ export default function NFeImportPage() {
     try {
       const body =
         mode === "xml"
-          ? { xml: xml.trim() }
-          : { chave: chaveDigits };
+          ? { xml: xml.trim(), viewerUser: user ?? undefined }
+          : { chave: chaveDigits, viewerUser: user ?? undefined };
 
       const res = await fetch("/api/nfe/consult", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(user ? { [VIEWER_HEADER]: user } : {}),
+        },
         body: JSON.stringify(body),
       });
 
@@ -66,8 +70,10 @@ export default function NFeImportPage() {
     }
   };
 
+  const canSubmitChave =
+    isValidChave && !!user && user !== "admin";
   const canSubmit =
-    (mode === "chave" && isValidChave) || (mode === "xml" && hasXml);
+    (mode === "chave" && canSubmitChave) || (mode === "xml" && hasXml);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[var(--background)]">
@@ -164,9 +170,18 @@ export default function NFeImportPage() {
                 className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3 font-mono text-base text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
               />
               <p className="text-xs text-[var(--muted)]">
-                {chaveDigits.length}/44 dígitos. Com certificado digital configurado
-                (NFE_CERT_*), a consulta é feita direto na SEFAZ. Caso contrário, cole o XML.
+                {chaveDigits.length}/44 dígitos. A consulta na SEFAZ usa o certificado da loja:{" "}
+                <span className="font-medium text-[var(--foreground)]">ipanema</span> (PROMESSA) ou{" "}
+                <span className="font-medium text-[var(--foreground)]">leblon</span> (PROVISAO). O usuário{" "}
+                <span className="font-medium text-[var(--foreground)]">admin</span> deve usar a aba XML ou
+                entrar com leblon/ipanema.
               </p>
+              {user === "admin" && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Você está como admin: a chave não dispara certificado de loja. Use a aba XML ou faça login
+                  leblon/ipanema.
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-2">

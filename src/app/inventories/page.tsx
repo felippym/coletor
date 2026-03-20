@@ -296,7 +296,7 @@ export default function InventoriesPage() {
                     className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-4 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
                   >
                     <Link href={`/inventories/${inv.id}`} className="block -m-4 p-4">
-                      {/* Linha 1: título + loja (admin) + status — mesmo ritmo que conferências NFe */}
+                      {/* Linha 1: título + loja (criador) + status — badge visível para todos; filtros por loja só no admin */}
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                           <h3 className="line-clamp-2 min-w-0 text-sm font-semibold leading-tight text-[var(--foreground)]">
@@ -308,7 +308,7 @@ export default function InventoriesPage() {
                               />
                             )}
                           </h3>
-                          {user === "admin" && inv.createdBy && (
+                          {inv.createdBy && (
                             <span
                               className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
                                 inv.createdBy.toLowerCase() === "leblon"

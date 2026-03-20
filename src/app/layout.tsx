@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
+import { APP_NAME } from "@/lib/app-brand";
 import { TopRightActions } from "@/components/TopRightActions";
 import { AuthProvider } from "@/components/AuthProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,12 +24,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Plataforma de Gestão",
+  title: APP_NAME,
+  applicationName: APP_NAME,
   description: "Contagem de estoque com leitura de código de barras",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Plataforma de Gestão",
+    title: APP_NAME,
   },
   icons: {
     icon: [

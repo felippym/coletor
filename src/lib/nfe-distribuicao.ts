@@ -1,9 +1,10 @@
 /**
  * Consulta NFe via Distribuição DFe (SEFAZ) com certificado digital A1.
- * Requer: NFE_CERT_BASE64, NFE_CERT_PASSWORD, NFE_CNPJ
+ * Credenciais por loja: ver `resolveNfeCertForViewer` (NFE_*_IPANEMA / NFE_*_LEBLON).
  */
 
 import https from "https";
+import { resolveNfeCertForViewer } from "@/lib/nfe-cert-config";
 import zlib from "zlib";
 import { XMLParser } from "fast-xml-parser";
 
@@ -49,23 +50,21 @@ function decompressDocZip(base64: string): string {
   return zlib.gunzipSync(buf).toString("utf-8");
 }
 
-export async function fetchXmlByCert(chave: string): Promise<{ xml: string } | { error: string }> {
-  const certBase64 = process.env.NFE_CERT_BASE64;
-  const certPassword = process.env.NFE_CERT_PASSWORD;
-  const cnpj = process.env.NFE_CNPJ;
-
-  if (!certBase64 || !certPassword || !cnpj) {
-    return {
-      error:
-        "Certificado não configurado. Defina NFE_CERT_BASE64, NFE_CERT_PASSWORD e NFE_CNPJ nas variáveis de ambiente.",
-    };
+export async function fetchXmlByCert(
+  chave: string,
+  viewerUser?: string | null
+): Promise<{ xml: string } | { error: string }> {
+  const resolved = resolveNfeCertForViewer(viewerUser);
+  if (!resolved.ok) {
+    return { error: resolved.error };
   }
+  const { certBase64, certPassword, cnpj } = resolved.credentials;
 
   let pfx: Buffer;
   try {
     pfx = Buffer.from(certBase64, "base64");
   } catch {
-    return { error: "NFE_CERT_BASE64 inválido (deve ser base64 do arquivo .pfx)" };
+    return { error: "Certificado base64 inválido (deve ser base64 do arquivo .pfx)" };
   }
 
   const tpAmb = process.env.NFE_AMBIENTE === "2" ? 2 : 1;
@@ -190,7 +189,7 @@ export async function fetchXmlByCert(chave: string): Promise<{ xml: string } | {
       resolve({
         error:
           err.message?.includes("certificate") || err.message?.includes("UNABLE_TO_VERIFY")
-            ? "Certificado digital inválido ou expirado. Verifique NFE_CERT_BASE64 e NFE_CERT_PASSWORD."
+            ? "Certificado digital inválido ou expirado. Verifique base64, senha e CNPJ da loja no servidor."
             : `Erro de conexão: ${err.message}`,
       });
     });

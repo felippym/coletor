@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { APP_NAME, APP_SHORT_NAME } from "@/lib/app-brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Plataforma de Gestão",
-    short_name: "Gestão",
+    name: APP_NAME,
+    short_name: APP_SHORT_NAME,
     description: "Contagem de estoque com leitura de código de barras",
     start_url: "/",
     display: "standalone",
