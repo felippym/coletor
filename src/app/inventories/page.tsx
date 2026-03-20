@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
-import { Package, Trash2, Plus, Clock, Box, AlertTriangle, MessageSquare, Filter, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { Package, Trash2, Clock, AlertTriangle, MessageSquare, Filter, ChevronDown, ChevronUp, RotateCcw, User } from "lucide-react";
 import { getInventories, deleteInventory, deleteAllInventories, saveInventory } from "@/lib/storage";
 import { getProdutosByCodigos } from "@/lib/produtos";
 import { useAuth } from "@/components/AuthProvider";
@@ -59,7 +59,8 @@ export default function InventoriesPage() {
         const matchName = inv.name.toLowerCase().includes(q);
         const matchCreatedBy = inv.createdBy?.toLowerCase().includes(q);
         const matchObservation = inv.observation?.toLowerCase().includes(q);
-        if (!matchName && !matchCreatedBy && !matchObservation) return false;
+        const matchFuncionario = (inv.funcionario?.toLowerCase() ?? "").includes(q);
+        if (!matchName && !matchCreatedBy && !matchObservation && !matchFuncionario) return false;
       }
       return true;
     });
@@ -218,7 +219,7 @@ export default function InventoriesPage() {
                 <div className="space-y-3 border-t border-[var(--border)] p-3">
                   <input
                     type="search"
-                    placeholder="Buscar por nome, criador, observação..."
+                    placeholder="Buscar por nome, loja, funcionário, observação..."
                     value={filterSearch}
                     onChange={(e) => setFilterSearch(e.target.value)}
                     className="w-full rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] placeholder-[var(--muted)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
@@ -294,12 +295,12 @@ export default function InventoriesPage() {
               </Link>
             </div>
           ) : (
-            filteredInventories.map((inv) => {
+            <div className="space-y-3">
+              {filteredInventories.map((inv) => {
                 const totalQty = inv.items.reduce((s, i) => s + i.quantity, 0);
                 const unique = inv.items.length;
                 const naoCadastrados = inv.items.filter((i) => !produtoNames.get(i.ean)?.trim());
                 const produtosNaoCadastrados = naoCadastrados.length;
-                const itensNaoCadastrados = naoCadastrados.reduce((s, i) => s + i.quantity, 0);
                 const status = inv.status ?? "em_contagem";
                 const { className: statusClass } = statusConfig[status];
                 const formattedDate = formatDate(inv.createdAt);
@@ -307,144 +308,139 @@ export default function InventoriesPage() {
                 return (
                   <div
                     key={inv.id}
-                    className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-5 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
+                    className="group relative rounded-xl bg-[var(--surface)] border border-[var(--border)]/60 p-4 transition-all duration-200 hover:border-[var(--border)] hover:shadow-lg"
                   >
-                    <Link
-                      href={`/inventories/${inv.id}`}
-                      className={`block -m-5 p-5 ${user === "admin" ? "pr-10" : "pr-5"}`}
-                    >
-                      {/* Top row */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-hover)]">
-                            <Package className="h-5 w-5 text-[var(--muted)]" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold text-[var(--foreground)] text-base tracking-tight">
-                                {inv.name}
-                              </h3>
-                              {inv.createdBy && (
-                                <span
-                                  className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                                    inv.createdBy.toLowerCase() === "leblon"
-                                      ? "border-pink-500/40 bg-pink-500/15 text-pink-600 dark:text-pink-400"
-                                      : inv.createdBy.toLowerCase() === "ipanema"
-                                        ? "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400"
-                                        : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]"
-                                  }`}
-                                >
-                                  {inv.createdBy}
-                                </span>
-                              )}
-                              {inv.observation && (
-                                <MessageSquare className="h-4 w-4 shrink-0 text-[var(--muted)]" aria-label="Tem observação" />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5 text-sm text-[var(--muted)]">
-                              <Clock className="h-3.5 w-3.5" />
-                              <span>{formattedDate}</span>
-                            </div>
-                          </div>
+                    <Link href={`/inventories/${inv.id}`} className="block -m-4 p-4">
+                      {/* Linha 1: título + loja (admin) + status — mesmo ritmo que conferências NFe */}
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                          <h3 className="line-clamp-2 min-w-0 text-sm font-semibold leading-tight text-[var(--foreground)]">
+                            {inv.name}
+                            {inv.observation && (
+                              <MessageSquare
+                                className="ml-1 inline-block h-3.5 w-3.5 align-middle text-[var(--muted)]"
+                                aria-label="Tem observação"
+                              />
+                            )}
+                          </h3>
+                          {user === "admin" && inv.createdBy && (
+                            <span
+                              className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
+                                inv.createdBy.toLowerCase() === "leblon"
+                                  ? "border-pink-500/40 bg-pink-500/15 text-pink-600 dark:text-pink-400"
+                                  : inv.createdBy.toLowerCase() === "ipanema"
+                                    ? "border-purple-500/40 bg-purple-500/15 text-purple-600 dark:text-purple-400"
+                                    : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--secondary)]"
+                              }`}
+                            >
+                              {inv.createdBy}
+                            </span>
+                          )}
                         </div>
-
-                        {user !== "admin" && (
+                        {user === "admin" ? (
+                          <div className="relative shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setStatusEditId(statusEditId === inv.id ? null : inv.id);
+                              }}
+                              className={`nfe-status-badge inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap transition-colors hover:opacity-90 ${statusClass}`}
+                              aria-expanded={statusEditId === inv.id}
+                              aria-haspopup="listbox"
+                              aria-label="Alterar status"
+                            >
+                              {statusLabel[status]}
+                              <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                            </button>
+                            {statusEditId === inv.id && (
+                              <div
+                                className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border-2 border-[var(--border)] bg-[var(--surface)] py-1 shadow-xl"
+                                onClick={(e) => e.stopPropagation()}
+                                role="listbox"
+                              >
+                                {(["em_contagem", "finalizado", "importado"] as InventoryStatus[]).map((s) => (
+                                  <button
+                                    key={s}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={s === status}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleStatusChange(inv, s);
+                                      setStatusEditId(null);
+                                    }}
+                                    className={`block w-full px-3 py-2 text-left text-sm font-medium hover:bg-[var(--surface-hover)] ${
+                                      s === status ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "text-[var(--foreground)]"
+                                    }`}
+                                  >
+                                    {statusLabel[s]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
                           <span
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium shrink-0 ${statusClass}`}
+                            className={`nfe-status-badge inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-sm font-medium whitespace-nowrap ${statusClass}`}
                           >
                             {statusLabel[status]}
                           </span>
                         )}
                       </div>
 
-                      {/* Bottom row */}
-                      <div className="pt-3 border-t border-[var(--border)]/50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1.5 text-[var(--muted)]">
-                            <Box className="h-3.5 w-3.5" />
-                            <span>
-                              <span className="font-medium text-[var(--foreground)]">{unique}</span> produtos
-                            </span>
-                          </div>
-                          <span className="text-[var(--border)]">•</span>
-                          <span className="text-[var(--muted)]">
-                            <span className="font-medium text-[var(--foreground)]">{totalQty}</span> itens
+                      {/* Linha 2: data/hora */}
+                      <div className="mb-2 flex items-center gap-2 text-xs text-[var(--muted)]">
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
+                        <span>{formattedDate}</span>
+                      </div>
+
+                      {/* Linha 3: produtos, itens, funcionário, validação, excluir */}
+                      <div className="flex items-center justify-between gap-2 border-t border-[var(--border)]/50 pt-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-medium">
+                          <span className="flex items-center gap-1 text-[var(--muted)]">
+                            <Package className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-[var(--foreground)]">{unique}</span> produtos
                           </span>
-                          <>
-                            <span className="text-[var(--border)]">•</span>
-                            {produtosNaoCadastrados > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-[var(--destructive)]">
-                                <span className="text-sm font-medium">{produtosNaoCadastrados}</span>
-                                <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Não cadastrado" />
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 text-[var(--success)]">
-                                <span
-                                  className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--success)]"
-                                  aria-hidden
-                                />
-                                <span className="text-sm font-medium">validado</span>
-                              </span>
-                            )}
-                          </>
-                          </div>
-                          <button
-                            onClick={(e) => handleDeleteClick(e, inv)}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] transition-colors hover:bg-[var(--destructive)]/20"
-                            aria-label="Excluir inventário"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <span className="text-[var(--muted)]">
+                            <span className="text-[var(--foreground)]">{totalQty}</span> itens
+                          </span>
+                          {produtosNaoCadastrados > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-[var(--destructive)]">
+                              <span className="text-[var(--foreground)]">{produtosNaoCadastrados}</span>
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-label="Não cadastrado" />
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[var(--success)]">
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full bg-[var(--success)]"
+                                aria-hidden
+                              />
+                              <span>validado</span>
+                            </span>
+                          )}
+                          {inv.funcionario && (
+                            <span className="flex items-center gap-1 text-[var(--muted)]">
+                              <User className="h-3.5 w-3.5 shrink-0" />
+                              {inv.funcionario}
+                            </span>
+                          )}
                         </div>
+                        <button
+                          onClick={(e) => handleDeleteClick(e, inv)}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-600 transition-colors hover:bg-red-500/20 dark:text-red-400"
+                          aria-label="Excluir inventário"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </Link>
-
-                    {user === "admin" && (
-                      <div className="absolute right-10 top-5 z-10 flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${statusClass}`}
-                        >
-                          {statusLabel[status]}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setStatusEditId(statusEditId === inv.id ? null : inv.id);
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-hover)] text-[var(--muted)] transition-colors hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)]"
-                          aria-label="Alterar status"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                        {statusEditId === inv.id && (
-                          <div className="absolute right-0 top-full mt-1 flex flex-col rounded-lg border border-[var(--border)] bg-[var(--surface)] py-1 shadow-lg">
-                            {(["em_contagem", "finalizado", "importado"] as InventoryStatus[]).map((s) => (
-                              <button
-                                key={s}
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleStatusChange(inv, s);
-                                  setStatusEditId(null);
-                                }}
-                                className={`px-3 py-1.5 text-left text-xs font-medium hover:bg-[var(--surface-hover)] ${
-                                  s === status ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "text-[var(--foreground)]"
-                                }`}
-                              >
-                                {statusLabel[s]}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
-              })
+              })}
+            </div>
           )}
         </div>
       </main>
