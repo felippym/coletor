@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { getProdutoByCodigo } from "@/lib/produtos";
 import { playScanSound, playScanErrorSound } from "@/lib/scan-sound";
+import { NFE_PRODUCT_NOT_ON_INVOICE } from "@/types/nfe";
 
 interface ScanConfirmationProps {
   ean: string;
@@ -27,7 +28,7 @@ export function ScanConfirmation({ ean, quantity, onComplete, productName: produ
     if (productNameProp != null) {
       setProdutoNome(productNameProp);
       setLoaded(true);
-      const notListed = productNameProp.trim() === "Produto não listado na NFe";
+      const notListed = productNameProp.trim() === NFE_PRODUCT_NOT_ON_INVOICE;
       if (notListed) playScanErrorSound();
       else playScanSound();
       return;
@@ -46,7 +47,7 @@ export function ScanConfirmation({ ean, quantity, onComplete, productName: produ
 
   useEffect(() => {
     if (!loaded) return;
-    const notInNfe = produtoNome?.trim() === "Produto não listado na NFe";
+    const notInNfe = produtoNome?.trim() === NFE_PRODUCT_NOT_ON_INVOICE;
     const duration = notInNfe ? NOT_LISTED_DURATION_MS : 600;
 
     if (notInNfe) onBlockingChange?.(true);
@@ -73,7 +74,7 @@ export function ScanConfirmation({ ean, quantity, onComplete, productName: produ
     };
   }, [loaded, produtoNome, onComplete, onBlockingChange]);
 
-  const notInNfe = produtoNome?.trim() === "Produto não listado na NFe";
+  const notInNfe = produtoNome?.trim() === NFE_PRODUCT_NOT_ON_INVOICE;
   const cadastrado = !!produtoNome?.trim() && !notInNfe;
   const bgColor = notInNfe || !cadastrado ? "bg-[var(--destructive)]" : "bg-[var(--success)]";
 

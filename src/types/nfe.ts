@@ -1,9 +1,16 @@
+/** Descrição usada para linhas adicionadas manualmente (código fora da NFe). */
+export const NFE_PRODUCT_NOT_ON_INVOICE = "Produto não listado na NFe" as const;
+
 export interface NFeProduct {
   ean: string;
   description: string;
   expectedQty: number;
   unitPrice: number;
   countedQty: number;
+  /** Códigos escaneados vinculados a esta linha (contam no conferido da NFe). */
+  linkedScanCodes?: string[];
+  /** Unidades conferidas por cada código vinculado (para remover vínculo sem distorcer o total). */
+  linkedScanCounts?: Record<string, number>;
 }
 
 export interface NFeInvoice {

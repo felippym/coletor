@@ -22,6 +22,10 @@ function getConferenceStatus(products: NFeProduct[]): ConferenceStatus {
   return allMatch ? "concluida" : "em_andamento";
 }
 
+function getEffectiveConferenceStatus(conf: NFeConference): ConferenceStatus {
+  return (conf.status ?? getConferenceStatus(conf.products ?? [])) as ConferenceStatus;
+}
+
 function formatDate(iso: string) {
   try {
     const d = new Date(iso);
@@ -94,9 +98,7 @@ export default function NFeConferencesPage() {
 
   const filteredConferences = useMemo(() => {
     return conferences.filter((conf) => {
-      const products = conf.products ?? [];
-      const computedStatus = getConferenceStatus(products);
-      const status = (conf.status ?? computedStatus) as ConferenceStatus;
+      const status = getEffectiveConferenceStatus(conf);
 
       if (filterStatus !== "todos" && status !== filterStatus) return false;
       if (filterCreatedBy !== "todos" && conf.createdBy !== filterCreatedBy) return false;
@@ -138,6 +140,10 @@ export default function NFeConferencesPage() {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
+    if (getEffectiveConferenceStatus(deleteTarget) === "encerrado") {
+      setDeleteTarget(null);
+      return;
+    }
     await deleteNFeConference(deleteTarget.id);
     setConferences((prev) => prev.filter((c) => c.id !== deleteTarget.id));
     setDeleteTarget(null);
@@ -311,8 +317,8 @@ export default function NFeConferencesPage() {
                 )
                 .map((conf) => {
                   const products = conf.products ?? [];
-                  const computedStatus = getConferenceStatus(products);
-                  const status = (conf.status ?? computedStatus) as ConferenceStatus;
+                  const status = getEffectiveConferenceStatus(conf);
+                  const canDelete = status !== "encerrado";
                   const { className: statusClass } = statusConfig[status];
                   const totalExpected = products
                     .filter((p) => p.expectedQty > 0)
@@ -442,8 +448,9 @@ export default function NFeConferencesPage() {
                               </span>
                             )}
                           </div>
-                          {user === "admin" && (
+                          {canDelete && (
                             <button
+                              type="button"
                               onClick={(e) => handleDeleteClick(e, conf)}
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 transition-colors hover:bg-red-500/20"
                               aria-label="Excluir conferência"

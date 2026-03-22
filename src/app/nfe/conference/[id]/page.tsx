@@ -3,18 +3,81 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Minus, Clock, Package, FileText, Copy, AlertTriangle, CheckCircle, Camera, FileDown, Trash2, Search } from "lucide-react";
+import {
+  Minus,
+  Clock,
+  Package,
+  FileText,
+  Copy,
+  AlertTriangle,
+  CheckCircle,
+  Camera,
+  FileDown,
+  Trash2,
+  Search,
+  Link2,
+  Link2Off,
+} from "lucide-react";
 import { getNFeConference, saveNFeConference } from "@/lib/nfe-storage";
 import { HiddenBarcodeInput } from "@/components/HiddenBarcodeInput";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { ScanConfirmation } from "@/components/ScanConfirmation";
+import { LinkUnlistedScanModal } from "@/components/LinkUnlistedScanModal";
 import { ConfirmDeleteDrawer } from "@/components/ConfirmDeleteDrawer";
 import { StartConferenceDrawer } from "@/components/StartConferenceDrawer";
 import { ObservationField } from "@/components/ObservationField";
 import { useAuth } from "@/components/AuthProvider";
 import { generateConferencePdf } from "@/lib/generate-conference-pdf";
 import { SkeletonDetailPage } from "@/components/Skeleton";
-import type { NFeConference, NFeProduct } from "@/types/nfe";
+import { NFE_PRODUCT_NOT_ON_INVOICE, type NFeConference, type NFeProduct } from "@/types/nfe";
+
+function findProductIndexByScannedCode(products: NFeProduct[], code: string): number {
+  const trimmed = code.trim();
+  return products.findIndex(
+    (p) =>
+      p.ean === trimmed || (Array.isArray(p.linkedScanCodes) && p.linkedScanCodes.includes(trimmed))
+  );
+}
+
+function productLineForScannedCode(products: NFeProduct[], code: string): NFeProduct | undefined {
+  const i = findProductIndexByScannedCode(products, code);
+  return i >= 0 ? products[i] : undefined;
+}
+
+function withoutLinkedCode(p: NFeProduct, scanned: string): NFeProduct {
+  const codes = p.linkedScanCodes?.filter((c) => c !== scanned);
+  const counts = p.linkedScanCounts ? { ...p.linkedScanCounts } : {};
+  delete counts[scanned];
+
+  if (!codes?.length) {
+    const { linkedScanCodes: _lc, linkedScanCounts: _lct, ...rest } = p;
+    return rest;
+  }
+
+  const next: NFeProduct = { ...p, linkedScanCodes: codes };
+  if (Object.keys(counts).length > 0) next.linkedScanCounts = counts;
+  else delete next.linkedScanCounts;
+  return next;
+}
+
+/** Devolve quantidade para linha “Produto não listado na NFe” (cria ou soma). */
+function mergeGhostUnlistedRow(products: NFeProduct[], scannedCode: string, addCounted: number) {
+  const idx = products.findIndex(
+    (x) => x.description === NFE_PRODUCT_NOT_ON_INVOICE && x.ean === scannedCode
+  );
+  if (idx >= 0) {
+    const g = products[idx];
+    products[idx] = { ...g, countedQty: g.countedQty + addCounted };
+    return;
+  }
+  products.push({
+    ean: scannedCode,
+    description: NFE_PRODUCT_NOT_ON_INVOICE,
+    expectedQty: 0,
+    unitPrice: 0,
+    countedQty: Math.max(0, addCounted),
+  });
+}
 
 function formatDate(iso: string) {
   try {
@@ -42,9 +105,14 @@ export default function NFeConferencePage() {
   const [conference, setConference] = useState<NFeConference | null>(null);
   const [search, setSearch] = useState("");
   const [confirmScan, setConfirmScan] = useState<{ ean: string; quantity: number } | null>(null);
+  const [pendingUnlistedScan, setPendingUnlistedScan] = useState<{
+    ean: string;
+    mergeFromRowIndex?: number;
+  } | null>(null);
   const [isScanBlocked, setIsScanBlocked] = useState(false);
   const [decreaseTarget, setDecreaseTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
   const [deleteProductTarget, setDeleteProductTarget] = useState<{ originalIndex: number; product: NFeProduct } | null>(null);
+  const [unlinkTarget, setUnlinkTarget] = useState<{ originalIndex: number; code: string } | null>(null);
   const [showFinishDrawer, setShowFinishDrawer] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [finishDrawerLoading, setFinishDrawerLoading] = useState(false);
@@ -71,43 +139,138 @@ export default function NFeConferencePage() {
         ({ product }) =>
           !q ||
           product.description.toLowerCase().includes(q) ||
-          product.ean.toLowerCase().includes(q)
+          product.ean.toLowerCase().includes(q) ||
+          product.linkedScanCodes?.some((c) => c.toLowerCase().includes(q))
       );
   }, [conference, search]);
+
+  const linkableRows = useMemo(() => {
+    if (!conference) return [];
+    return conference.products
+      .map((product, originalIndex) => ({ product, originalIndex }))
+      .filter(({ product }) => product.description !== NFE_PRODUCT_NOT_ON_INVOICE);
+  }, [conference]);
 
   const processBarcode = useCallback(
     (ean: string) => {
       const trimmed = ean.trim();
-      if (!trimmed || !conference || isScanBlocked || conference.status === "encerrado") return;
+      if (
+        !trimmed ||
+        !conference ||
+        isScanBlocked ||
+        conference.status === "encerrado" ||
+        pendingUnlistedScan
+      )
+        return;
 
       const products = [...conference.products];
-      const idx = products.findIndex((p) => p.ean === trimmed);
+      const idx = findProductIndexByScannedCode(products, trimmed);
 
       if (idx >= 0) {
-        products[idx] = {
-          ...products[idx],
-          countedQty: products[idx].countedQty + 1,
-        };
-      } else {
-        products.push({
-          ean: trimmed,
-          description: "Produto não listado na NFe",
-          expectedQty: 0,
-          unitPrice: 0,
-          countedQty: 1,
-        });
+        const prev = products[idx];
+        const viaLinked =
+          prev.ean !== trimmed && prev.linkedScanCodes?.includes(trimmed) === true;
+        if (viaLinked) {
+          const nextCounts = { ...(prev.linkedScanCounts ?? {}) };
+          nextCounts[trimmed] = (nextCounts[trimmed] ?? 0) + 1;
+          products[idx] = {
+            ...prev,
+            countedQty: prev.countedQty + 1,
+            linkedScanCounts: nextCounts,
+          };
+        } else {
+          products[idx] = {
+            ...prev,
+            countedQty: prev.countedQty + 1,
+          };
+        }
+        const updated = { ...conference, products };
+        setConference(updated);
+        void saveNFeConference(updated);
+        setConfirmScan({ ean: trimmed, quantity: products[idx].countedQty });
+        setBarcodeInput("");
+        return;
       }
 
-      const updated = { ...conference, products };
-      setConference(updated);
-      void saveNFeConference(updated);
-
-      const product = products.find((p) => p.ean === trimmed);
-      const totalQty = product?.countedQty ?? 1;
-      setConfirmScan({ ean: trimmed, quantity: totalQty });
+      setPendingUnlistedScan({ ean: trimmed });
       setBarcodeInput("");
     },
-    [conference, isScanBlocked]
+    [conference, isScanBlocked, pendingUnlistedScan]
+  );
+
+  const handleRegisterUnlistedWithoutLink = useCallback(() => {
+    if (!conference || !pendingUnlistedScan) return;
+    if (pendingUnlistedScan.mergeFromRowIndex != null) return;
+    const trimmed = pendingUnlistedScan.ean;
+    const products = [
+      ...conference.products,
+      {
+        ean: trimmed,
+        description: NFE_PRODUCT_NOT_ON_INVOICE,
+        expectedQty: 0,
+        unitPrice: 0,
+        countedQty: 1,
+      },
+    ];
+    const updated = { ...conference, products };
+    setConference(updated);
+    void saveNFeConference(updated);
+    setPendingUnlistedScan(null);
+    setConfirmScan({ ean: trimmed, quantity: 1 });
+  }, [conference, pendingUnlistedScan]);
+
+  const handleLinkUnlistedToRow = useCallback(
+    (targetOriginalIndex: number) => {
+      if (!conference || !pendingUnlistedScan) return;
+      const scannedEan = pendingUnlistedScan.ean;
+      const mergeFrom = pendingUnlistedScan.mergeFromRowIndex;
+
+      const products: NFeProduct[] = conference.products.map((p) => {
+        const copy: NFeProduct = { ...p };
+        if (p.linkedScanCodes?.length) copy.linkedScanCodes = [...p.linkedScanCodes];
+        if (p.linkedScanCounts && Object.keys(p.linkedScanCounts).length) {
+          copy.linkedScanCounts = { ...p.linkedScanCounts };
+        }
+        return copy;
+      });
+
+      for (let i = 0; i < products.length; i++) {
+        if (!products[i].linkedScanCodes?.includes(scannedEan)) continue;
+        products[i] = withoutLinkedCode(products[i], scannedEan);
+      }
+
+      let addQty = 1;
+      let targetIdx = targetOriginalIndex;
+      let working = products;
+
+      if (mergeFrom !== undefined) {
+        const ghost = products[mergeFrom];
+        if (!ghost || ghost.ean !== scannedEan) return;
+        addQty = Math.max(0, ghost.countedQty);
+        working = products.filter((_, i) => i !== mergeFrom);
+        targetIdx = targetOriginalIndex > mergeFrom ? targetOriginalIndex - 1 : targetOriginalIndex;
+      }
+
+      const target = working[targetIdx];
+      if (!target) return;
+
+      const mergedCounts = { ...(target.linkedScanCounts ?? {}) };
+      mergedCounts[scannedEan] = (mergedCounts[scannedEan] ?? 0) + addQty;
+
+      working[targetIdx] = {
+        ...target,
+        linkedScanCodes: [...new Set([...(target.linkedScanCodes ?? []), scannedEan])],
+        countedQty: target.countedQty + addQty,
+        linkedScanCounts: mergedCounts,
+      };
+
+      const updated = { ...conference, products: working };
+      setConference(updated);
+      void saveNFeConference(updated);
+      setPendingUnlistedScan(null);
+      setConfirmScan({ ean: scannedEan, quantity: working[targetIdx].countedQty });
+    },
+    [conference, pendingUnlistedScan]
   );
 
   const isReadOnly = conference?.status === "encerrado";
@@ -179,6 +342,35 @@ export default function NFeConferencePage() {
   const focusBarcodeInput = useCallback(() => {
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
   }, []);
+
+  const handleCancelUnlistedModal = useCallback(() => {
+    setPendingUnlistedScan(null);
+    focusBarcodeInput();
+  }, [focusBarcodeInput]);
+
+  const handleConfirmUnlink = useCallback(() => {
+    if (!conference || !unlinkTarget) return;
+    const { originalIndex, code } = unlinkTarget;
+    const products = [...conference.products];
+    const p = products[originalIndex];
+    if (!p?.linkedScanCodes?.includes(code)) {
+      setUnlinkTarget(null);
+      focusBarcodeInput();
+      return;
+    }
+    const n = p.linkedScanCounts?.[code] ?? 0;
+    const stripped = withoutLinkedCode(p, code);
+    products[originalIndex] = {
+      ...stripped,
+      countedQty: Math.max(0, p.countedQty - n),
+    };
+    mergeGhostUnlistedRow(products, code, n);
+    const updated = { ...conference, products };
+    setConference(updated);
+    void saveNFeConference(updated);
+    setUnlinkTarget(null);
+    focusBarcodeInput();
+  }, [conference, unlinkTarget, focusBarcodeInput]);
 
   const lastFocusedConferenceIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -413,29 +605,79 @@ export default function NFeConferencePage() {
                             <p className="text-sm font-medium leading-snug text-[var(--foreground)]">
                               {product.description}
                             </p>
-                            <span className="mt-1 flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(product.ean);
-                                  setCopiedEan(product.ean);
-                                  setTimeout(() => setCopiedEan(null), 2000);
-                                }}
-                                className="flex items-center gap-1.5 font-mono text-[13px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
-                                title={copiedEan === product.ean ? "Copiado" : "Copiar EAN"}
-                              >
-                                {product.ean}
-                                <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
-                              </button>
-                              {copiedEan === product.ean && (
-                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400" title="Copiado">
-                                  Copiado
+                            <span className="mt-1 flex flex-col gap-1">
+                              <span className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(product.ean);
+                                    setCopiedEan(product.ean);
+                                    setTimeout(() => setCopiedEan(null), 2000);
+                                  }}
+                                  className="flex items-center gap-1.5 font-mono text-[13px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                                  title={copiedEan === product.ean ? "Copiado" : "Copiar EAN"}
+                                >
+                                  {product.ean}
+                                  <Copy className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
+                                </button>
+                                {copiedEan === product.ean && (
+                                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400" title="Copiado">
+                                    Copiado
+                                  </span>
+                                )}
+                              </span>
+                              {product.linkedScanCodes && product.linkedScanCodes.length > 0 && (
+                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
+                                  <span className="shrink-0 font-medium text-[var(--muted)]">Vinculados:</span>
+                                  {product.linkedScanCodes.map((code) => (
+                                    <span
+                                      key={code}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)]/35 bg-[var(--accent)]/10 px-2 py-0.5 font-mono text-[11px] text-[var(--accent)]"
+                                    >
+                                      <span className="max-w-[140px] truncate sm:max-w-[200px]" title={code}>
+                                        {code}
+                                      </span>
+                                      {!isReadOnly && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setUnlinkTarget({ originalIndex, code })}
+                                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--accent)] transition-colors hover:bg-[var(--destructive)]/15 hover:text-[var(--destructive)]"
+                                          title="Remover vínculo"
+                                          aria-label={`Remover vínculo do código ${code}`}
+                                        >
+                                          <Link2Off className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </span>
+                                  ))}
                                 </span>
                               )}
                             </span>
                           </div>
                           {!isReadOnly && (
                             <div className="flex shrink-0 items-center gap-1">
+                              {product.description === NFE_PRODUCT_NOT_ON_INVOICE && (
+                                <button
+                                  type="button"
+                                  disabled={linkableRows.length === 0}
+                                  onClick={() =>
+                                    linkableRows.length > 0 &&
+                                    setPendingUnlistedScan({
+                                      ean: product.ean,
+                                      mergeFromRowIndex: originalIndex,
+                                    })
+                                  }
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--accent)]/50 bg-[var(--accent)]/10 text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                  title={
+                                    linkableRows.length === 0
+                                      ? "Não há itens da NFe na conferência para vincular"
+                                      : "Vincular a um item da NFe"
+                                  }
+                                  aria-label="Vincular a um item da NFe"
+                                >
+                                  <Link2 className="h-4 w-4" />
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() =>
@@ -501,6 +743,24 @@ export default function NFeConferencePage() {
         </div>
       </main>
 
+      {pendingUnlistedScan && conference && (
+        <LinkUnlistedScanModal
+          open
+          ean={pendingUnlistedScan.ean}
+          linkableRows={linkableRows}
+          onCancel={handleCancelUnlistedModal}
+          onRegisterWithoutLink={handleRegisterUnlistedWithoutLink}
+          onLinkToRow={handleLinkUnlistedToRow}
+          mergeFromExistingRow={pendingUnlistedScan.mergeFromRowIndex != null}
+          mergeCountedQty={
+            pendingUnlistedScan.mergeFromRowIndex != null
+              ? conference.products[pendingUnlistedScan.mergeFromRowIndex]?.countedQty
+              : undefined
+          }
+          initialStep={pendingUnlistedScan.mergeFromRowIndex != null ? "pick" : "choice"}
+        />
+      )}
+
       {confirmScan && (
         <ScanConfirmation
           ean={confirmScan.ean}
@@ -511,7 +771,7 @@ export default function NFeConferencePage() {
             focusBarcodeInput();
           }}
           onBlockingChange={setIsScanBlocked}
-          productName={conference.products.find((p) => p.ean === confirmScan.ean)?.description}
+          productName={productLineForScannedCode(conference.products, confirmScan.ean)?.description}
         />
       )}
 
@@ -557,6 +817,31 @@ export default function NFeConferencePage() {
         }
         confirmLabel="Excluir"
         loadingLabel="Excluindo..."
+      />
+
+      <ConfirmDeleteDrawer
+        isOpen={!!unlinkTarget}
+        onClose={() => {
+          setUnlinkTarget(null);
+          focusBarcodeInput();
+        }}
+        onConfirm={handleConfirmUnlink}
+        title="Remover vínculo?"
+        message={
+          unlinkTarget && conference
+            ? (() => {
+                const p = conference.products[unlinkTarget.originalIndex];
+                const n = p?.linkedScanCounts?.[unlinkTarget.code] ?? 0;
+                const head = `O código ${unlinkTarget.code} deixará de contar neste item da NFe.`;
+                if (n > 0) {
+                  return `${head} Serão subtraídas ${n} unidade(s) do conferido e recolocadas na linha "${NFE_PRODUCT_NOT_ON_INVOICE}".`;
+                }
+                return `${head} Voltará a linha "${NFE_PRODUCT_NOT_ON_INVOICE}" com conferido 0 (sem histórico de quantidade por vínculo).`;
+              })()
+            : undefined
+        }
+        confirmLabel="Remover vínculo"
+        loadingLabel="Removendo..."
       />
 
       <StartConferenceDrawer
